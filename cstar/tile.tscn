@@ -1,0 +1,18 @@
+[gd_scene load_steps=2 format=3 uid="uid://c1dgo2yw67yrq"]
+
+[ext_resource type="Texture2D" uid="uid://b0ymsbrq6gcn3" path="res://hex.png" id="1_dohn0"]
+
+[node name="Tile" type="Node2D"]
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_dohn0")
+
+[node name="Label" type="Label" parent="."]
+offset_left = -4.0
+offset_top = -11.0
+offset_right = 6.0
+offset_bottom = 12.0
+text = "^"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 1
