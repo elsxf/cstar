@@ -25,7 +25,6 @@ texture = ExtResource("3_oylul")
 texture = ExtResource("4_jgrc3")
 0:0/0 = 0
 0:0/0/terrain_set = 0
-0:0/0/custom_data_0 = -1
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_74kdd"]
 texture = ExtResource("5_7ywjt")
@@ -44,7 +43,6 @@ texture = ExtResource("5_7ywjt")
 0:0/0/terrains_peering_bit/top_corner = 0
 0:0/0/terrains_peering_bit/top_right_side = 0
 0:0/0/terrains_peering_bit/top_right_corner = 0
-0:0/0/custom_data_0 = 1
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_gufoh"]
 texture = ExtResource("6_vtork")
@@ -63,12 +61,10 @@ texture = ExtResource("6_vtork")
 0:0/0/terrains_peering_bit/top_corner = 0
 0:0/0/terrains_peering_bit/top_right_side = 0
 0:0/0/terrains_peering_bit/top_right_corner = 0
-0:0/0/custom_data_0 = 2
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_r5giy"]
 texture = ExtResource("7_f2dq8")
 0:0/0 = 0
-0:0/0/custom_data_0 = 4
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_73oew"]
 texture = ExtResource("8_ql4vv")
@@ -91,12 +87,10 @@ texture = ExtResource("8_yjqft")
 0:0/0/terrains_peering_bit/top_corner = 0
 0:0/0/terrains_peering_bit/top_right_side = 0
 0:0/0/terrains_peering_bit/top_right_corner = 0
-0:0/0/custom_data_0 = 1
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_r0dlo"]
 texture = ExtResource("10_bo3rs")
 0:0/0 = 0
-0:0/0/custom_data_0 = -1
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_1vkjt"]
 texture = ExtResource("11_2dj2n")

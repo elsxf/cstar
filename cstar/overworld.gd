@@ -1,6 +1,7 @@
 extends Node2D
 
 const _def = preload("res://defines.gd")
+const _gen = preload("res://generation.gd")
 
 var overworld_map = FastNoiseLite.new()
 var subworld_map = FastNoiseLite.new()
@@ -63,14 +64,8 @@ func save_chunk():
 func load_chunk(data):
 	for i in range(_def.chunk_size):
 		for j in range(_def.chunk_size):
-			$TileMap.set_cell(0, Vector2(i,j), data[i][j],Vector2i(-0, 0))
-			
-func gen_chunk(noise:FastNoiseLite, chunkCoords:Vector2, t_data):
-	for i in range(_def.chunk_size):
-		for j in range(_def.chunk_size):
-			#var coord = chunkCoords * _def.chunk_size + Vector2(i,j)
-			var coord = Vector2(i,j)
-			add_tile(coord,t_data, noise)
+			#print(data[i][j])
+			$TileMap.set_cell(0, Vector2(i,j), data[i][j],Vector2i(0, 0))
 
 func pathFind(start: Vector2i, goal: Vector2i):
 	var frontier = []
@@ -133,6 +128,13 @@ func pixel_to_hex(point):
 	var r = (2./3 * point.y) / size
 	return axial_round(Vector3(q, r,-q-r))
 	
+func hex_to_pixel(tile:Vector3i, center:Vector3i):
+	var hex = Vector3(tile-center)
+	var size = $TileMap.tile_set.tile_size.x*$TileMap.scale.x/2
+	var x = size * (sqrt(3) * hex.x  +  sqrt(3)/2 * hex.y)
+	var y = size * (1.5 * hex.y)
+	return Vector2(x,y) + scrnCnt()
+	
 func cube_dist(a : Vector3i, b: Vector3i):
 	var diff = abs(a-b)
 	return (diff.x+diff.y+diff.z)/2
@@ -143,25 +145,24 @@ func inRange(center: Vector3i, n: int):
 		for r in range(max(-n,-q-n),min(n,-q+n),1):
 			results.append(center + Vector3i(q,r,-q-r))
 	return results
+
+func lerp(a,b,t):#floats
+	return a+(b-a)*t
 	
-func add_tile(coord:Vector2, t_data, noise:FastNoiseLite):
-	var value = noise.get_noise_2dv(coord)
-	value = clamp(int((value*4+1) * (t_data.size())/2),0,t_data.size()-1)
-	var data = t_data[value]
-	$TileMap.set_cell(0,coord,data[_def.T_data_cols.Scource],data[_def.T_data_cols.Coord])
-	$TileMap.get_cell_tile_data(0, coord).set_custom_data("M_Cost",data[_def.T_data_cols.m_cost])
-	
+func cube_lerp(a, b, t): # for hexes
+	return Vector3(lerp(a.x, b.x, t),lerp(a.y, b.y, t),lerp(a.z, b.z, t))
+
+func inLine(start: Vector3i, end:Vector3i):
+	var results = []
+	var n = cube_dist(start,end)
+	for i in range(n+1):
+		results.append(axial_round(cube_lerp(start, end, 1.0/n * i)))
+	return results
 	
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	$TileMap.clear()
-
-
-	overworld_map.frequency=.001
-	overworld_map.fractal_lacunarity=3
-	overworld_map.domain_warp_enabled=true
-	overworld_map.cellular_distance_function=FastNoiseLite.DISTANCE_HYBRID
-	overworld_map.seed = Time.get_unix_time_from_system();
+	
 	subworld_map.frequency=.1
 	subworld_map.fractal_lacunarity=5
 	subworld_map.domain_warp_enabled=true
@@ -169,8 +170,10 @@ func _ready():
 	subworld_map.seed = Time.get_unix_time_from_system();
 	#await map.changed
 	#var data = image.get_data()
-	gen_chunk(overworld_map,Vector2i(0,0),_def.over_t_dat)
+	saveState[SAVE_OVERWORLD] = _gen.gen_overworld(Vector2(0,0))
+	load_chunk(saveState[SAVE_OVERWORLD])
 	$Player.world_c = Vector3i(oddr_to_axial(Vector2(_def.chunk_size/2,_def.chunk_size/2)))
+	$Player.dun_c = Vector3i(oddr_to_axial(Vector2(_def.chunk_size/2,_def.chunk_size/2)))
 
 	
 	pass # Replace with function body.
@@ -206,14 +209,18 @@ func _input(event):
 		next_move=-1
 	
 	if next_move!=null:
-		if(typeof(next_move)==TYPE_VECTOR3I):
-			var next_tile = $TileMap.get_cell_tile_data(0,axial_to_oddr($Player.world_c+next_move))
+		if(typeof(next_move)==TYPE_VECTOR3I):#moving within level
+			var next_tile = $TileMap.get_cell_tile_data(0,axial_to_oddr($Player.curr_c()+next_move))
 			if(next_tile!=null):
 				next_move_cost = next_tile.get_custom_data("M_Cost")
 				if next_move_cost!=-1:
-					$Player.world_c+=next_move
-					print($Player.world_c)
-		if(typeof(next_move)==TYPE_INT):
+					if($Player.d_level==-1):
+						$Player.world_c+=next_move
+						print($Player.world_c)
+					else:
+						$Player.dun_c+=next_move
+						print($Player.dun_c)
+		if(typeof(next_move)==TYPE_INT):#movving up/down
 			var curr_chunk = save_chunk()
 			if $Player.d_level==-1:#SAVE OVERWORLD
 				saveState[SAVE_OVERWORLD]=curr_chunk
@@ -221,32 +228,40 @@ func _input(event):
 				if(not saveState[SAVE_DUNGEONS].has($Player.world_c)):#create subworld at this chunk if not already exists
 					saveState[SAVE_DUNGEONS][$Player.world_c]=[]
 				if saveState[SAVE_DUNGEONS][$Player.world_c].size()-1<$Player.d_level:
-					saveState[SAVE_DUNGEONS][$Player.world_c].append([])
-					saveState[SAVE_DUNGEONS][$Player.world_c][$Player.d_level].append(curr_chunk)
+					#saveState[SAVE_DUNGEONS][$Player.world_c].append([])
+					#saveState[SAVE_DUNGEONS][$Player.world_c][$Player.d_level].append(curr_chunk)
+					saveState[SAVE_DUNGEONS][$Player.world_c].append(curr_chunk)
 				else:
-					saveState[$Player.world_c][$Player.d_level] = curr_chunk
+					saveState[SAVE_DUNGEONS][$Player.world_c][$Player.d_level] = curr_chunk
 			$Player.d_level+=next_move
-			if(saveState[SAVE_DUNGEONS].has([$Player.world_c].size()>$Player.d_level)):
-				load_chunk(saveState[$Player.world_c][$Player.d_level])
+			if($Player.d_level==-1):
+				load_chunk(saveState[SAVE_OVERWORLD])
 			else:
-				var player2d = axial_to_oddr($Player.world_c)
-				subworld_map.seed = Time.get_unix_time_from_system();
-				gen_chunk(subworld_map,axial_to_oddr($Player.world_c),_def.dun_t_dat)
+				if(saveState[SAVE_DUNGEONS].has($Player.world_c) and saveState[SAVE_DUNGEONS][$Player.world_c].size()>$Player.d_level):
+					load_chunk(saveState[SAVE_DUNGEONS][$Player.world_c][$Player.d_level])
+				else:
+					var player2d = axial_to_oddr($Player.world_c)
+					load_chunk(_gen.gen_dungeon())
+			print("d_level: "+str($Player.d_level))
 
-	var mapOffset = -axial_to_oddr($Player.world_c)
+	var mapOffset = -axial_to_oddr($Player.curr_c())
 	mapOffset.x-=float(absi(mapOffset.y)%2) /2
 	mapOffset*=Vector2($TileMap.tile_set.tile_size)*$TileMap.scale
 	mapOffset.y=(mapOffset.y*3)/4
 	$TileMap.position=mapOffset + scrnCnt() + tile_offset
 		
 	$TileMap.clear_layer(1)
-	var m_coord = $TileMap.local_to_map( $TileMap.to_local(get_viewport().get_mouse_position() ))
-	#var m_coord = axial_to_oddr(pixel_to_hex( get_viewport().get_mouse_position() - scrnCnt()) +$Player.world_c)
-	#m_coord.x-=(absi(mapOffset.y)%2)*2
-	$TileMap.set_cell(1,m_coord,1,Vector2i(0,0))
+	var m_tile = $TileMap.local_to_map( $TileMap.to_local(get_viewport().get_mouse_position()))
+	var hex_pix = $TileMap.to_global($TileMap.map_to_local(m_tile))
+	#$TileMap.set_cell(1,m_tile,1,Vector2i(0,0))
+	for i in inLine(oddr_to_axial(m_tile),$Player.curr_c()):
+		$TileMap.set_cell(1,axial_to_oddr(i),1,Vector2i(0,0))
+	$SightLine.clear_points()
+	$SightLine.add_point(hex_pix,0)
+	$SightLine.add_point(scrnCnt(),1)
 	if event is InputEventMouseButton:
-		#print(cube_dist(oddr_to_axial(m_coord),$Player.world_c))
-		var path = pathFind(m_coord,axial_to_oddr($Player.world_c))
+		#print(cube_dist(oddr_to_axial(m_tile),$Player.world_c))
+		var path = pathFind(m_tile,axial_to_oddr($Player.curr_c()))
 		if (path!=null):
 			for i in path:
 				$TileMap.set_cell(1,i,1,Vector2i(0,0))
