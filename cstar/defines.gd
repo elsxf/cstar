@@ -1,5 +1,9 @@
 extends Object
 
+enum Layer_Names{
+	Terrain,Highlight,Vis
+}
+
 enum Over_tile_names{
 	Hills,Forest,Water,Deep_Water
 }
@@ -25,6 +29,17 @@ static var dun_t_dat = [
 	[8, Vector2(0,0)],
 	[7, Vector2(0,0)],
 ]
+
+enum vis_tile_names{
+	Unknown,Unseen,Seen
+}
+
+static var vis_t_dat = [
+	[10, Vector2(0,0)],
+	[11, Vector2(0,0)],
+	[12, Vector2(0,0)],
+]
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	pass # Replace with function body.

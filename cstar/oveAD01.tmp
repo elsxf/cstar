@@ -31,7 +31,7 @@ texture = ExtResource("4_coqbf")
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_n0hnd"]
 texture = ExtResource("5_c5po2")
 0:0/0 = 0
-0:0/0/modulate = Color(0.0509804, 0.0509804, 0.0509804, 0.807843)
+0:0/0/modulate = Color(0, 0, 0, 0.729412)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_fjao3"]
 texture = ExtResource("6_ohj7t")
@@ -94,7 +94,6 @@ texture = ExtResource("8_ql4vv")
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ua5jp"]
 texture = ExtResource("8_yjqft")
-0:0/next_alternative_id = 2
 0:0/0 = 0
 0:0/0/terrain_set = 0
 0:0/0/terrain = 0
@@ -122,7 +121,7 @@ texture = ExtResource("10_bo3rs")
 texture = ExtResource("11_2dj2n")
 0:0/0 = 0
 
-[sub_resource type="TileSet" id="TileSet_cn5ru"]
+[sub_resource type="TileSet" id="TileSet_4hegr"]
 tile_shape = 3
 terrain_set_0/mode = 0
 terrain_set_0/terrain_0/name = "Terrain 0"
@@ -151,11 +150,10 @@ script = ExtResource("1_hie4k")
 [node name="TileMap" type="TileMap" parent="."]
 position = Vector2(-32, -32)
 scale = Vector2(4, 4)
-tile_set = SubResource("TileSet_cn5ru")
+tile_set = SubResource("TileSet_4hegr")
 format = 2
 layer_0/name = "Terrain"
 layer_1/name = "Highlight"
-layer_1/modulate = Color(1, 1, 1, 0.501961)
 layer_1/tile_data = PackedInt32Array()
 layer_2/name = "Visibility"
 layer_2/tile_data = PackedInt32Array()
@@ -164,4 +162,3 @@ layer_2/tile_data = PackedInt32Array()
 position = Vector2(573, 368)
 
 [node name="SightLine" type="Line2D" parent="."]
-width = 2.0
