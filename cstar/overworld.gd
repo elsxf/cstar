@@ -35,7 +35,8 @@ func load_chunk(data):
 			
 	#reveal initial area, generalize this later	
 	var seen_hex = _def.vis_t_dat[_def.vis_tile_names.Seen][_def.T_data_cols.Scource]
-	for i in LOS(_hex.axial_to_oddr($Player.curr_c()),$Player.sight_range):
+	$Player.FOV = LOS(_hex.axial_to_oddr($Player.curr_c()),$Player.sight_range)
+	for i in $Player.FOV:
 		$TileMap.set_cell(_def.Layer_Names.Vis, i, seen_hex,Vector2i(0, 0))
 
 func LOS(src: Vector2i, n:int):
@@ -77,7 +78,7 @@ func inRing(center: Vector2i, rad: int):#ring of tiles(coord)
 		results.append(center)
 		return results
 	
-	var hex = center + Vector2i(_hex.axial_to_oddr(_hex.dir_vec[2]*rad))
+	var hex = _hex.axial_to_oddr(Vector3i(_hex.oddr_to_axial(center)) + _hex.dir_vec[2]*rad)
 	for i in range(6):
 		for j in range(rad):
 			results.append(hex)
@@ -152,19 +153,16 @@ func _input(event):
 					else:
 						$Player.dun_c+=next_move
 						print($Player.dun_c)
-					#move map
-					offset_map()
 					#update seen/unseen los stuff
 					var unknown_hex = _def.vis_t_dat[_def.vis_tile_names.Unknown][_def.T_data_cols.Scource]
 					var unseen_hex = _def.vis_t_dat[_def.vis_tile_names.Unseen][_def.T_data_cols.Scource]
 					var seen_hex = _def.vis_t_dat[_def.vis_tile_names.Seen][_def.T_data_cols.Scource]
 					#set all known to unseen
-					for i in _hex.inRange($Player.curr_c(),$Player.sight_range+1):
-						i = _hex.axial_to_oddr(i)
-						if $TileMap.get_cell_source_id(_def.Layer_Names.Vis, i) != unknown_hex:
-							$TileMap.set_cell(_def.Layer_Names.Vis,i,unseen_hex,Vector2(0,0))
+					for i in $Player.FOV:
+						$TileMap.set_cell(_def.Layer_Names.Vis,i,unseen_hex,Vector2(0,0))
 					#set visible to seen
-					for i in LOS(_hex.axial_to_oddr($Player.curr_c()),$Player.sight_range):
+					$Player.FOV = LOS(_hex.axial_to_oddr($Player.curr_c()),$Player.sight_range)
+					for i in $Player.FOV:
 						$TileMap.set_cell(_def.Layer_Names.Vis,i,seen_hex,Vector2(0,0))
 						
 		if(typeof(next_move)==TYPE_INT):#movving up/down
@@ -191,7 +189,8 @@ func _input(event):
 			print("d_level: "+str($Player.d_level))
 
 
-		
+	#move map
+	offset_map()
 	var m_tile = pixel_to_hex(get_viewport().get_mouse_position())
 	var hex_pix = pixel_to_hex(m_tile)
 	#$TileMap.set_cell(1,m_tile,1,Vector2i(0,0))
