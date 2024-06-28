@@ -26,7 +26,7 @@ static func pathFind(start: Vector2i, goal: Vector2i, tilemap : TileMap, mode=As
 		for next in tilemap.get_surrounding_cells(current):
 			var next_data = tilemap.get_cell_tile_data(0, next)
 			if(next_data==null):#tried to go outside bounds, skip tile
-				print("tile null at:"+str(next))
+				#print("tile null at:"+str(next))
 				continue
 				#return null
 			var cost_of_next

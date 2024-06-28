@@ -32,12 +32,17 @@ func load_chunk(data):
 			$TileMap.set_cell(_def.Layer_Names.Terrain, Vector2(i,j), data[i][j],Vector2i(0, 0))
 			var unknown_hex = _def.vis_t_dat[_def.vis_tile_names.Unknown][_def.T_data_cols.Scource]
 			$TileMap.set_cell(_def.Layer_Names.Vis, Vector2(i,j), unknown_hex,Vector2i(0, 0))
-			
-	#reveal initial area, generalize this later	
+
+func do_LOS():
+	var unknown_hex = _def.vis_t_dat[_def.vis_tile_names.Unknown][_def.T_data_cols.Scource]
+	var unseen_hex = _def.vis_t_dat[_def.vis_tile_names.Unseen][_def.T_data_cols.Scource]
 	var seen_hex = _def.vis_t_dat[_def.vis_tile_names.Seen][_def.T_data_cols.Scource]
+	for i in $Player.FOV:
+		$TileMap.set_cell(_def.Layer_Names.Vis,i,unseen_hex,Vector2(0,0))
+					#set visible to seen
 	$Player.FOV = LOS(_hex.axial_to_oddr($Player.curr_c()),$Player.sight_range)
 	for i in $Player.FOV:
-		$TileMap.set_cell(_def.Layer_Names.Vis, i, seen_hex,Vector2i(0, 0))
+		$TileMap.set_cell(_def.Layer_Names.Vis,i,seen_hex,Vector2(0,0))
 
 func LOS(src: Vector2i, n:int):
 	#$SightLine.clear_points()
@@ -49,7 +54,7 @@ func LOS(src: Vector2i, n:int):
 			if not canSee.has(j):
 				canSee.append(j)
 			var tile = $TileMap.get_cell_tile_data(_def.Layer_Names.Terrain,j)
-			if tile.get_custom_data("V_cost")==-1:
+			if tile==null or tile.get_custom_data("V_cost")==-1:
 				break
 		#$SightLine.add_point(hex_to_pixel(axial_to_oddr(src)))
 		#$SightLine.add_point(hex_to_pixel(axial_to_oddr(canSee.back())))
@@ -104,6 +109,7 @@ func _ready():
 	_gen.gen_overworld(Vector2(0,0),$TileMap)
 	saveState[SAVE_OVERWORLD] = save_chunk()
 	load_chunk(saveState[SAVE_OVERWORLD])
+	do_LOS()
 	offset_map()
 
 	
@@ -118,7 +124,6 @@ func _process(delta):
 	
 func _input(event):
 	$TileMap.clear_layer(1)
-	#print(parity)
 	var next_move=null
 	var next_move_cost
 	if(event.is_action_pressed("Left")):
@@ -149,44 +154,41 @@ func _input(event):
 					#move player
 					if($Player.d_level==-1):
 						$Player.world_c+=next_move
-						print($Player.world_c)
+						#print($Player.world_c)
 					else:
 						$Player.dun_c+=next_move
-						print($Player.dun_c)
-					#update seen/unseen los stuff
-					var unknown_hex = _def.vis_t_dat[_def.vis_tile_names.Unknown][_def.T_data_cols.Scource]
-					var unseen_hex = _def.vis_t_dat[_def.vis_tile_names.Unseen][_def.T_data_cols.Scource]
-					var seen_hex = _def.vis_t_dat[_def.vis_tile_names.Seen][_def.T_data_cols.Scource]
-					#set all known to unseen
-					for i in $Player.FOV:
-						$TileMap.set_cell(_def.Layer_Names.Vis,i,unseen_hex,Vector2(0,0))
-					#set visible to seen
-					$Player.FOV = LOS(_hex.axial_to_oddr($Player.curr_c()),$Player.sight_range)
-					for i in $Player.FOV:
-						$TileMap.set_cell(_def.Layer_Names.Vis,i,seen_hex,Vector2(0,0))
+						#print($Player.dun_c)
 						
 		if(typeof(next_move)==TYPE_INT):#movving up/down
-			var curr_chunk = save_chunk()
-			if $Player.d_level==-1:#SAVE OVERWORLD
-				saveState[SAVE_OVERWORLD]=curr_chunk
-			else:#SAVE SUBWORLD
-				if(not saveState[SAVE_DUNGEONS].has($Player.world_c)):#create subworld at this chunk if not already exists
-					saveState[SAVE_DUNGEONS][$Player.world_c]=[]
-				if saveState[SAVE_DUNGEONS][$Player.world_c].size()-1<$Player.d_level:
-					#saveState[SAVE_DUNGEONS][$Player.world_c].append([])
-					#saveState[SAVE_DUNGEONS][$Player.world_c][$Player.d_level].append(curr_chunk)
-					saveState[SAVE_DUNGEONS][$Player.world_c].append(curr_chunk)
+			var curr_tile = $TileMap.get_cell_source_id(0, _hex.axial_to_oddr($Player.curr_c()))
+			if( (curr_tile==14 and next_move==1) or (curr_tile==13 and next_move==-1)):
+				var curr_chunk = save_chunk()
+				if $Player.d_level==-1:#SAVE OVERWORLD
+					saveState[SAVE_OVERWORLD]=curr_chunk
+				else:#SAVE SUBWORLD
+					if(not saveState[SAVE_DUNGEONS].has($Player.world_c)):#create subworld at this chunk if not already exists
+						saveState[SAVE_DUNGEONS][$Player.world_c]=[]
+					if saveState[SAVE_DUNGEONS][$Player.world_c].size()-1<$Player.d_level:
+						#saveState[SAVE_DUNGEONS][$Player.world_c].append([])
+						#saveState[SAVE_DUNGEONS][$Player.world_c][$Player.d_level].append(curr_chunk)
+						saveState[SAVE_DUNGEONS][$Player.world_c].append(curr_chunk)
+					else:
+						saveState[SAVE_DUNGEONS][$Player.world_c][$Player.d_level] = curr_chunk
+				$Player.d_level+=next_move
+				$Player.FOV = []
+				if($Player.d_level==-1):
+					load_chunk(saveState[SAVE_OVERWORLD])
+					$Player.dun_c= Vector3i(_hex.oddr_to_axial(Vector2(_def.chunk_size/2,_def.chunk_size/2)))
 				else:
-					saveState[SAVE_DUNGEONS][$Player.world_c][$Player.d_level] = curr_chunk
-			$Player.d_level+=next_move
-			if($Player.d_level==-1):
-				load_chunk(saveState[SAVE_OVERWORLD])
-			else:
-				if(saveState[SAVE_DUNGEONS].has($Player.world_c) and saveState[SAVE_DUNGEONS][$Player.world_c].size()>$Player.d_level):
-					load_chunk(saveState[SAVE_DUNGEONS][$Player.world_c][$Player.d_level])
-				else:
-					_gen.gen_dungeon($TileMap)
-			print("d_level: "+str($Player.d_level))
+					if(saveState[SAVE_DUNGEONS].has($Player.world_c) and saveState[SAVE_DUNGEONS][$Player.world_c].size()>$Player.d_level):
+						load_chunk(saveState[SAVE_DUNGEONS][$Player.world_c][$Player.d_level])
+					else:
+						_gen.gen_dungeon($TileMap, _hex.axial_to_oddr($Player.curr_c()))
+				BetterTerrain.update_terrain_area($TileMap, _def.Layer_Names.Terrain, Rect2i(0,0,_def.chunk_size,_def.chunk_size), true)
+				print("d_level: "+str($Player.d_level))
+		#update seen/unseen los stuff
+		#set all known to unseen
+		do_LOS()
 
 
 	#move map
@@ -194,10 +196,10 @@ func _input(event):
 	var m_tile = pixel_to_hex(get_viewport().get_mouse_position())
 	var hex_pix = pixel_to_hex(m_tile)
 	#$TileMap.set_cell(1,m_tile,1,Vector2i(0,0))
-	for i in inLine(m_tile,_hex.axial_to_oddr($Player.curr_c())):
-		$TileMap.set_cell(1,i,1,Vector2i(0,0))
-		if $TileMap.get_cell_tile_data(_def.Layer_Names.Terrain,i).get_custom_data("V_cost")==-1:
-			$TileMap.set_cell(1,i,6,Vector2i(0,0))
+	#for i in inLine(m_tile,_hex.axial_to_oddr($Player.curr_c())):
+		#$TileMap.set_cell(1,i,1,Vector2i(0,0))
+		#if $TileMap.get_cell_tile_data(_def.Layer_Names.Terrain,i).get_custom_data("V_cost")==-1:
+			#$TileMap.set_cell(1,i,6,Vector2i(0,0))
 	#$SightLine.clear_points()
 	#$SightLine.add_point(hex_pix,0)
 	#$SightLine.add_point(scrnCnt(),1)

@@ -12,29 +12,34 @@ static func gen_overworld(chunk_coord: Vector2i, chunk:TileMap):
 			#var coord = chunkCoords * _def.chunk_size + Vector2(i,j)
 			var coord = Vector2(i,j)
 			var value = overworld_noise.get_noise_2dv(coord)
-			value = clamp(int((value*4+1) * (_def.over_t_dat.size())/2),0,_def.over_t_dat.size()-1)
+			value = clamp(int((value*3+1) * (_def.over_t_dat.size())/2),0,_def.over_t_dat.size()-1)
 			chunk.set_cell(_def.Layer_Names.Terrain,Vector2(i,j),_def.over_t_dat[value][0],Vector2(0,0))
+			if(randi_range(0,100)==0):
+				chunk.set_cell(_def.Layer_Names.Terrain,Vector2(i,j),14,Vector2(0,0))
 	return chunk
 	
 static func gen_surface():
 	pass
 
-static func gen_dungeon(chunk:TileMap):
+static func gen_dungeon(chunk:TileMap, entry:Vector2i):
 	var wall_hex=_def.dun_t_dat[_def.Under_tile_names.Cave_Wall][_def.T_data_cols.Scource]
 	var floor_hex=_def.dun_t_dat[_def.Under_tile_names.Cave_Floor][_def.T_data_cols.Scource]
+	var unknown_hex = _def.vis_t_dat[_def.vis_tile_names.Unknown][_def.T_data_cols.Scource]
 	for i in range(_def.chunk_size):
 		for j in range(_def.chunk_size):
-			chunk.set_cell(_def.Layer_Names.Terrain,Vector2(i,j),wall_hex,Vector2(0,0))
-	var num_rooms = randi_range(5,15)
+			BetterTerrain.set_cell(chunk,_def.Layer_Names.Terrain,Vector2(i,j),0)
+			chunk.set_cell(_def.Layer_Names.Vis, Vector2(i,j), unknown_hex,Vector2i(0, 0))
+	var num_rooms = randi_range(10,25)
 	var room_loc=[]
 	var room_size=[]
 	for i in range(num_rooms):#generate room sizes
-		room_size.append(randi_range(7,15))
+		room_size.append(randi_range(3,8))
 	for i in range(num_rooms):#generate room locations
-		var maxRange = _def.chunk_size-room_size[i]-1
-		var x = randi_range(1, maxRange)
-		var y = randi_range(1, maxRange)
+		var maxRange = _def.chunk_size-room_size[i]-2
+		var x = randi_range(2, maxRange)
+		var y = randi_range(2, maxRange)
 		room_loc.append(Vector2i(x,y))
+	room_loc[0] = Vector2i(entry.x - room_size[0]/2,entry.y-room_size[0]/2)
 	for v in range(room_loc.size()):#place rooms
 		for i in range(room_size[v]):
 			for j in range(room_size[v]):
@@ -43,6 +48,10 @@ static func gen_dungeon(chunk:TileMap):
 		var path = _path.pathFind(room_loc[i],room_loc[(i+1)%num_rooms],chunk, _path.Astar_modes.Tunnel)
 		for j in path:
 			chunk.set_cell(_def.Layer_Names.Terrain,j,floor_hex,Vector2(0,0))
+	#up stair at entry
+	chunk.set_cell(_def.Layer_Names.Terrain,entry,13,Vector2(0,0))
+	#down stair in random room
+	chunk.set_cell(_def.Layer_Names.Terrain,room_loc[randi_range(1,num_rooms)],14,Vector2(0,0))
 	return chunk
 	
 
@@ -52,7 +61,7 @@ static func gen_dungeon(chunk:TileMap):
 static func init_random(init_seed=Time.get_unix_time_from_system()):
 	seed(init_seed)
 	save_seed=init_seed
-	overworld_noise.frequency=.001
+	overworld_noise.frequency=.02
 	overworld_noise.fractal_lacunarity=3
 	overworld_noise.domain_warp_enabled=true
 	overworld_noise.cellular_distance_function=FastNoiseLite.DISTANCE_HYBRID

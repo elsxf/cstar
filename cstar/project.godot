@@ -10,10 +10,23 @@ config_version=5
 
 [application]
 
-config/name="cultivatorSector"
+config/name="CStar"
 run/main_scene="res://overworld.tscn"
 config/features=PackedStringArray("4.2", "Forward Plus")
 config/icon="res://icon.svg"
+
+[autoload]
+
+BetterTerrain="*res://addons/better-terrain/BetterTerrain.gd"
+
+[display]
+
+window/size/viewport_width=2304
+window/size/viewport_height=1296
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/better-terrain/plugin.cfg")
 
 [input]
 
