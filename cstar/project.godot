@@ -19,11 +19,6 @@ config/icon="res://icon.svg"
 
 BetterTerrain="*res://addons/better-terrain/BetterTerrain.gd"
 
-[display]
-
-window/size/viewport_width=2304
-window/size/viewport_height=1296
-
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/better-terrain/plugin.cfg")

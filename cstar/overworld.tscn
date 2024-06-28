@@ -1,4 +1,4 @@
-[gd_scene load_steps=34 format=3 uid="uid://63wxav1bwk3a"]
+[gd_scene load_steps=36 format=3 uid="uid://63wxav1bwk3a"]
 
 [ext_resource type="Texture2D" uid="uid://b0ymsbrq6gcn3" path="res://hex.png" id="1_2quo0"]
 [ext_resource type="Script" path="res://overworld.gd" id="1_hie4k"]
@@ -15,49 +15,72 @@
 [ext_resource type="Texture2D" uid="uid://dblnnbvjj51wh" path="res://stairup_hex.png" id="8_mic7i"]
 [ext_resource type="Texture2D" uid="uid://d0f0s7tmfd3ub" path="res://hex2.png" id="8_ql4vv"]
 [ext_resource type="Texture2D" uid="uid://cliojlhte7pgf" path="res://hex_cave_floor.png" id="8_yjqft"]
+[ext_resource type="Texture2D" uid="uid://bpmscssvjj5mp" path="res://Player2.png" id="9_yhbmh"]
 [ext_resource type="Texture2D" uid="uid://d0oliksyiio7t" path="res://tree_1.png" id="11_2dj2n"]
 [ext_resource type="Texture2D" uid="uid://bbaq3kqrjjn5n" path="res://cave_wall_terrain2.png" id="13_6xyxv"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_f88v2"]
+resource_name = "base"
 texture = ExtResource("1_2quo0")
 0:0/0 = 0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_jkxa2"]
+resource_name = "highlight"
 texture = ExtResource("3_oylul")
 0:0/0 = 0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_h6c3v"]
+resource_name = "black"
 texture = ExtResource("4_coqbf")
+0:0/next_alternative_id = 3
 0:0/0 = 0
+0:0/1 = 1
+0:0/1/modulate = Color(1, 1, 1, 0.788235)
+0:0/2 = 2
+0:0/2/modulate = Color(1, 1, 1, 0)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_n0hnd"]
+resource_name = "mask"
 texture = ExtResource("5_c5po2")
 0:0/0 = 0
 0:0/0/modulate = Color(0.0509804, 0.0509804, 0.0509804, 0.807843)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_fjao3"]
+resource_name = "blank"
 texture = ExtResource("6_ohj7t")
 0:0/0 = 0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_a5p47"]
+resource_name = "stair_down"
 texture = ExtResource("7_jiuu6")
 0:0/0 = 0
 0:0/0/custom_data_0 = 1
 0:0/0/custom_data_1 = 1
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_6g3ev"]
+resource_name = "stair_up"
 texture = ExtResource("8_mic7i")
 0:0/0 = 0
 0:0/0/custom_data_0 = 1
 0:0/0/custom_data_1 = 1
 
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_vx7j2"]
+resource_name = "Player"
+texture = ExtResource("9_yhbmh")
+0:0/next_alternative_id = 4
+0:0/0 = 0
+0:0/3 = 3
+0:0/3/modulate = Color(0.270588, 1, 1, 1)
+
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_i7gmj"]
+resource_name = "Water"
 texture = ExtResource("4_jgrc3")
 0:0/0 = 0
 0:0/0/terrain_set = 0
 0:0/0/custom_data_0 = -1
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_74kdd"]
+resource_name = "forest"
 texture = ExtResource("5_7ywjt")
 0:0/0 = 0
 0:0/0/terrain_set = 0
@@ -78,6 +101,7 @@ texture = ExtResource("5_7ywjt")
 0:0/0/custom_data_1 = 1
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_gufoh"]
+resource_name = "hills"
 texture = ExtResource("6_vtork")
 0:0/0 = 0
 0:0/0/terrain_set = 0
@@ -98,15 +122,18 @@ texture = ExtResource("6_vtork")
 0:0/0/custom_data_1 = 1
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_r5giy"]
+resource_name = "water"
 texture = ExtResource("7_f2dq8")
 0:0/0 = 0
 0:0/0/custom_data_0 = 4
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_73oew"]
+resource_name = "highlight2"
 texture = ExtResource("8_ql4vv")
 0:0/0 = 0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ua5jp"]
+resource_name = "Cave_floor"
 texture = ExtResource("8_yjqft")
 0:0/next_alternative_id = 2
 0:0/0 = 0
@@ -127,6 +154,7 @@ texture = ExtResource("8_yjqft")
 0:0/0/custom_data_0 = 1
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_r0dlo"]
+resource_name = "Cave_wall"
 texture = ExtResource("13_6xyxv")
 0:0/0 = 0
 0:0/0/terrain_set = 0
@@ -878,6 +906,7 @@ texture = ExtResource("13_6xyxv")
 }
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_1vkjt"]
+resource_name = "Tree"
 texture = ExtResource("11_2dj2n")
 0:0/0 = 0
 
@@ -907,6 +936,7 @@ sources/11 = SubResource("TileSetAtlasSource_n0hnd")
 sources/12 = SubResource("TileSetAtlasSource_fjao3")
 sources/13 = SubResource("TileSetAtlasSource_a5p47")
 sources/14 = SubResource("TileSetAtlasSource_6g3ev")
+sources/15 = SubResource("TileSetAtlasSource_vx7j2")
 metadata/_better_terrain = {
 "decoration": ["Decoration", Color(0.411765, 0.411765, 0.411765, 1), 3, [], {
 "path": "res://addons/better-terrain/icons/Decoration.svg"
@@ -926,13 +956,18 @@ scale = Vector2(8, 8)
 tile_set = SubResource("TileSet_cn5ru")
 format = 2
 layer_0/name = "Terrain"
-layer_1/name = "Highlight"
-layer_1/modulate = Color(1, 1, 1, 0.501961)
+layer_1/name = "Features"
 layer_1/tile_data = PackedInt32Array()
-layer_2/name = "Visibility"
+layer_2/name = "Creatures"
 layer_2/tile_data = PackedInt32Array()
+layer_3/name = "Highlight"
+layer_3/modulate = Color(1, 1, 1, 0.501961)
+layer_3/tile_data = PackedInt32Array()
+layer_4/name = "Visibility"
+layer_4/tile_data = PackedInt32Array()
 
 [node name="Player" parent="." instance=ExtResource("3_mio54")]
+visible = false
 position = Vector2(573, 368)
 
 [node name="SightLine" type="Line2D" parent="."]

@@ -15,34 +15,40 @@ var saveState ={
 	SAVE_DUNGEONS:{},
 }
 
-var tile_offset = Vector2(-32,-32)
+var tile_offset = Vector2(-32,-32)#tilesize / 2 * scale
 	
 func save_chunk():
-	var result=[]
-	for i in range(_def.chunk_size):
-		result.append([])
-		for j in range(_def.chunk_size):
-			result[i].append($TileMap.get_cell_source_id(0, Vector2(i,j)))
-	return result
+	var chunk = []
+	var used = $TileMap.get_used_cells(_def.Layer_Names.Terrain)
+	chunk.append($TileMap.get_pattern(_def.Layer_Names.Terrain, used))
+	chunk.append($TileMap.get_pattern(_def.Layer_Names.Features, used))
+	#clear player FOV and save unknown/unseen TODO:lots of optimization posibilities here( only 0 and 1 )
+	var vis_hex = _def.vis_t_dat[0][_def.T_data_cols.Scource]
+	var unseen_hex = _def.vis_t_dat[_def.vis_tile_names.Unseen][_def.T_data_cols.Alt]
+	for i in $Player.FOV:
+		$TileMap.set_cell(_def.Layer_Names.Vis,i,vis_hex,Vector2(0,0),unseen_hex)
+	chunk.append($TileMap.get_pattern(_def.Layer_Names.Vis, used))
+	#TODO: save known/unknown
+	
+	return chunk
 			
 func load_chunk(data):
-	for i in range(_def.chunk_size):
-		for j in range(_def.chunk_size):
-			#print(data[i][j])
-			$TileMap.set_cell(_def.Layer_Names.Terrain, Vector2(i,j), data[i][j],Vector2i(0, 0))
-			var unknown_hex = _def.vis_t_dat[_def.vis_tile_names.Unknown][_def.T_data_cols.Scource]
-			$TileMap.set_cell(_def.Layer_Names.Vis, Vector2(i,j), unknown_hex,Vector2i(0, 0))
+	$TileMap.set_pattern(_def.Layer_Names.Terrain, Vector2i(0,0), data[0])
+	$TileMap.set_pattern(_def.Layer_Names.Features, Vector2i(0,0), data[1])
+	$TileMap.set_pattern(_def.Layer_Names.Vis, Vector2i(0,0), data[2])
 
 func do_LOS():
-	var unknown_hex = _def.vis_t_dat[_def.vis_tile_names.Unknown][_def.T_data_cols.Scource]
-	var unseen_hex = _def.vis_t_dat[_def.vis_tile_names.Unseen][_def.T_data_cols.Scource]
-	var seen_hex = _def.vis_t_dat[_def.vis_tile_names.Seen][_def.T_data_cols.Scource]
+	var vis_hex = _def.vis_t_dat[0][_def.T_data_cols.Scource]
+	var unknown_hex =  _def.vis_t_dat[_def.vis_tile_names.Unknown][_def.T_data_cols.Alt]
+	var unseen_hex = _def.vis_t_dat[_def.vis_tile_names.Unseen][_def.T_data_cols.Alt]
+	var seen_hex = _def.vis_t_dat[_def.vis_tile_names.Seen][_def.T_data_cols.Alt]
 	for i in $Player.FOV:
-		$TileMap.set_cell(_def.Layer_Names.Vis,i,unseen_hex,Vector2(0,0))
+		$TileMap.set_cell(_def.Layer_Names.Vis,i,vis_hex,Vector2(0,0),unseen_hex)
 					#set visible to seen
-	$Player.FOV = LOS(_hex.axial_to_oddr($Player.curr_c()),$Player.sight_range)
+	$Player.FOV = LOS($Player.curr_c(),$Player.sight_range)
 	for i in $Player.FOV:
-		$TileMap.set_cell(_def.Layer_Names.Vis,i,seen_hex,Vector2(0,0))
+		$TileMap.set_cell(_def.Layer_Names.Vis,i,vis_hex,Vector2(0,0),seen_hex)
+	$TileMap.set_cell(_def.Layer_Names.Vis,$Player.curr_c(),$Player.tile_id,Vector2(0,0))
 
 func LOS(src: Vector2i, n:int):
 	#$SightLine.clear_points()
@@ -62,7 +68,7 @@ func LOS(src: Vector2i, n:int):
 		
 
 func offset_map():#centers map on player
-	var mapOffset = -_hex.axial_to_oddr($Player.curr_c())
+	var mapOffset = Vector2(-$Player.curr_c())
 	mapOffset.x-=float(absi(mapOffset.y)%2) /2
 	mapOffset*=Vector2($TileMap.tile_set.tile_size)*$TileMap.scale
 	mapOffset.y=(mapOffset.y*3)/4
@@ -104,8 +110,8 @@ func _ready():
 	_gen.init_random()
 	
 	$TileMap.clear()
-	$Player.world_c = Vector3i(_hex.oddr_to_axial(Vector2(_def.chunk_size/2,_def.chunk_size/2)))
-	$Player.dun_c = Vector3i(_hex.oddr_to_axial(Vector2(_def.chunk_size/2,_def.chunk_size/2)))
+	$Player.world_c = Vector2i(_def.chunk_size/2,_def.chunk_size/2)
+	$Player.dun_c = Vector2i(_def.chunk_size/2,_def.chunk_size/2)
 	_gen.gen_overworld(Vector2(0,0),$TileMap)
 	saveState[SAVE_OVERWORLD] = save_chunk()
 	load_chunk(saveState[SAVE_OVERWORLD])
@@ -123,7 +129,7 @@ func _process(delta):
 	pass
 	
 func _input(event):
-	$TileMap.clear_layer(1)
+	$TileMap.clear_layer(_def.Layer_Names.Highlight)
 	var next_move=null
 	var next_move_cost
 	if(event.is_action_pressed("Left")):
@@ -147,21 +153,23 @@ func _input(event):
 	
 	if next_move!=null:
 		if(typeof(next_move)==TYPE_VECTOR3I):#moving within level
-			var next_tile = $TileMap.get_cell_tile_data(0,_hex.axial_to_oddr($Player.curr_c()+next_move))
+			var next_tile = $TileMap.get_cell_tile_data(0,_hex.axial_to_oddr(Vector3i(_hex.oddr_to_axial($Player.curr_c()))+next_move))
 			if(next_tile!=null):
 				next_move_cost = next_tile.get_custom_data("M_Cost")
 				if next_move_cost!=-1:
 					#move player
 					if($Player.d_level==-1):
-						$Player.world_c+=next_move
+						$Player.world_c=_hex.axial_to_oddr(Vector3i(_hex.oddr_to_axial($Player.world_c)) + next_move)
 						#print($Player.world_c)
 					else:
-						$Player.dun_c+=next_move
+						$Player.dun_c=_hex.axial_to_oddr(Vector3i(_hex.oddr_to_axial($Player.dun_c)) + next_move)
 						#print($Player.dun_c)
 						
 		if(typeof(next_move)==TYPE_INT):#movving up/down
-			var curr_tile = $TileMap.get_cell_source_id(0, _hex.axial_to_oddr($Player.curr_c()))
-			if( (curr_tile==14 and next_move==1) or (curr_tile==13 and next_move==-1)):
+			var curr_feature = $TileMap.get_cell_source_id(_def.Layer_Names.Features,$Player.curr_c())
+			var stair_down = _def.feature_t_dat[_def.feature_tile_names.sDown][_def.T_data_cols.Scource]
+			var stair_up = _def.feature_t_dat[_def.feature_tile_names.sUp][_def.T_data_cols.Scource]
+			if( ((curr_feature==stair_down or $Player.d_level==-1) and next_move==1) or ((curr_feature==stair_up or $Player.d_level==0) and next_move==-1)):
 				var curr_chunk = save_chunk()
 				if $Player.d_level==-1:#SAVE OVERWORLD
 					saveState[SAVE_OVERWORLD]=curr_chunk
@@ -175,15 +183,25 @@ func _input(event):
 					else:
 						saveState[SAVE_DUNGEONS][$Player.world_c][$Player.d_level] = curr_chunk
 				$Player.d_level+=next_move
-				$Player.FOV = []
+				#$Player.FOV = []
 				if($Player.d_level==-1):
+					$TileMap.scale = _def.tile_scale * 2
 					load_chunk(saveState[SAVE_OVERWORLD])
-					$Player.dun_c= Vector3i(_hex.oddr_to_axial(Vector2(_def.chunk_size/2,_def.chunk_size/2)))
+					$Player.dun_c= Vector2i(_def.chunk_size/2,_def.chunk_size/2)
 				else:
+					$TileMap.scale = _def.tile_scale
 					if(saveState[SAVE_DUNGEONS].has($Player.world_c) and saveState[SAVE_DUNGEONS][$Player.world_c].size()>$Player.d_level):
+						#area already generated, load from save
 						load_chunk(saveState[SAVE_DUNGEONS][$Player.world_c][$Player.d_level])
 					else:
-						_gen.gen_dungeon($TileMap, _hex.axial_to_oddr($Player.curr_c()))
+						#need to generate area
+						if($Player.d_level==0):
+							_gen.gen_surface($Player.world_c,$TileMap)
+						else:
+							_gen.gen_dungeon($Player.curr_c(), $TileMap)
+						do_LOS()
+						for i in $TileMap.get_used_cells(0):
+							$TileMap.set_cell(_def.Layer_Names.Vis,i,_def.vis_t_dat[_def.vis_tile_names.Unknown][_def.T_data_cols.Scource],Vector2i(0,0),_def.vis_t_dat[_def.vis_tile_names.Unknown][_def.T_data_cols.Alt])
 				BetterTerrain.update_terrain_area($TileMap, _def.Layer_Names.Terrain, Rect2i(0,0,_def.chunk_size,_def.chunk_size), true)
 				print("d_level: "+str($Player.d_level))
 		#update seen/unseen los stuff
@@ -207,7 +225,7 @@ func _input(event):
 		#$TileMap.set_cell(_def.Layer_Names.Highlight,axial_to_oddr(i),1,Vector2i(0,0))
 	if event is InputEventMouseButton:
 		#print(cube_dist(oddr_to_axial(m_tile),$Player.world_c))
-		var path = _path.pathFind(m_tile,_hex.axial_to_oddr($Player.curr_c()),$TileMap)
+		var path = _path.pathFind(m_tile,$Player.curr_c(),$TileMap)
 		if (path!=null):
 			for i in path:
-				$TileMap.set_cell(1,i,1,Vector2i(0,0))
+				$TileMap.set_cell(_def.Layer_Names.Highlight,i,1,Vector2i(0,0))
