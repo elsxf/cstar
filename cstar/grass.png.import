@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cf8eo3uivs8uq"
-path="res://.godot/imported/stairup_hex.png-58aa612d0c89cc17f1a2d7028b32a348.ctex"
+uid="uid://btjowu8w2jlqn"
+path="res://.godot/imported/grass.png-79cf597cc1adecdff9d12adae9606f9b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://stairup_hex.png"
-dest_files=["res://.godot/imported/stairup_hex.png-58aa612d0c89cc17f1a2d7028b32a348.ctex"]
+source_file="res://grass.png"
+dest_files=["res://.godot/imported/grass.png-79cf597cc1adecdff9d12adae9606f9b.ctex"]
 
 [params]
 

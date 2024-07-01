@@ -18,7 +18,9 @@ static var over_t_dat = [
 	#highest to lowest, no features
 	#tile scource, tile coord, m_cost, v_cost(unimplemented)
 	[4, Vector2(0,0),0],
+	[16, Vector2(0,0),0],
 	[3, Vector2(0,0),0],
+	[18, Vector2(0,0),0],
 	[5, Vector2(0,0),0],
 	[2, Vector2(0,0),0],
 ]

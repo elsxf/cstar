@@ -18,7 +18,11 @@ var target_mob = null
 var target_tile = null
 var time_cost = 0
 
-
+func curr_c():
+	if(d_level==-1):
+		return world_c
+	else:
+		return dun_c
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	pass # Replace with function body.

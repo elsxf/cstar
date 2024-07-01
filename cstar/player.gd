@@ -17,9 +17,3 @@ func _ready():
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
 	pass
-
-func curr_c():
-	if(d_level==-1):
-		return world_c
-	else:
-		return dun_c

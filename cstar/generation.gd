@@ -62,18 +62,20 @@ static func gen_dungeon(entry:Vector2i, chunk:TileMap):
 		var y = randi_range(2, maxRange)
 		room_loc.append(Vector2i(x,y))
 	room_loc[0] = Vector2i(entry.x - room_size[0]/2,entry.y-room_size[0]/2)
-	for v in range(room_loc.size()):#place rooms
+	#place rooms
+	for v in range(room_loc.size()):
 		for i in range(room_size[v]):
 			for j in range(room_size[v]):
 				chunk.set_cell(_def.Layer_Names.Terrain,room_loc[v]+Vector2i(i,j),floor_hex,Vector2(0,0))
-	for i in range(num_rooms):#connect rooms
+	#connect rooms
+	for i in range(num_rooms):
 		var path = _path.pathFind(room_loc[i],room_loc[(i+1)%num_rooms],chunk, _path.Astar_modes.Tunnel)
 		for j in path:
 			chunk.set_cell(_def.Layer_Names.Terrain,j,floor_hex,Vector2(0,0))
 	#up stair at entry
-	chunk.set_cell(_def.Layer_Names.Terrain,entry,stair_up,Vector2(0,0))
+	chunk.set_cell(_def.Layer_Names.Features,entry,stair_up,Vector2(0,0))
 	#down stair in random room
-	chunk.set_cell(_def.Layer_Names.Terrain,room_loc[randi_range(1,num_rooms-1)],stair_down,Vector2(0,0))
+	chunk.set_cell(_def.Layer_Names.Features,room_loc[randi_range(1,num_rooms-1)],stair_down,Vector2(0,0))
 	return chunk
 	
 

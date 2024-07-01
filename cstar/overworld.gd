@@ -4,6 +4,8 @@ const _def = preload("res://defines.gd")
 const _gen = preload("res://generation.gd")
 const _hex = preload("res://hexFuncs.gd")
 const _path = preload("res://pathfinding.gd")
+const _act = preload("res://actions.gd")
+const _mob = preload("res://mob.gd")
 
 enum {
 	SAVE_OVERWORLD,
@@ -153,22 +155,12 @@ func _input(event):
 	
 	if next_move!=null:
 		if(typeof(next_move)==TYPE_VECTOR3I):#moving within level
-			var next_tile = $TileMap.get_cell_tile_data(0,_hex.axial_to_oddr(Vector3i(_hex.oddr_to_axial($Player.curr_c()))+next_move))
-			if(next_tile!=null):
-				next_move_cost = next_tile.get_custom_data("M_Cost")
-				if next_move_cost!=-1:
-					#move player
-					if($Player.d_level==-1):
-						$Player.world_c=_hex.axial_to_oddr(Vector3i(_hex.oddr_to_axial($Player.world_c)) + next_move)
-						#print($Player.world_c)
-					else:
-						$Player.dun_c=_hex.axial_to_oddr(Vector3i(_hex.oddr_to_axial($Player.dun_c)) + next_move)
-						#print($Player.dun_c)
 						
 		if(typeof(next_move)==TYPE_INT):#movving up/down
 			var curr_feature = $TileMap.get_cell_source_id(_def.Layer_Names.Features,$Player.curr_c())
 			var stair_down = _def.feature_t_dat[_def.feature_tile_names.sDown][_def.T_data_cols.Scource]
 			var stair_up = _def.feature_t_dat[_def.feature_tile_names.sUp][_def.T_data_cols.Scource]
+			print(curr_feature)
 			if( ((curr_feature==stair_down or $Player.d_level==-1) and next_move==1) or ((curr_feature==stair_up or $Player.d_level==0) and next_move==-1)):
 				var curr_chunk = save_chunk()
 				if $Player.d_level==-1:#SAVE OVERWORLD
