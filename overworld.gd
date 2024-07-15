@@ -216,14 +216,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if(event.is_action("pickup")):
 		var valid_items = []
 		for i in HEX.inRange($Player.m.curr_c(),1):
-			if not current_map[i.x][i.y].i_items.is_empty():
-				valid_items.append(current_map[i.x][i.y].i_items)
+			valid_items.append_array(current_map[i.x][i.y].i_items)
 		match valid_items.size():
 			0:
 				DEF.textBuffer+="nothing to pick up\n"
 			1:
 				next_action = func pickup_lambda(calc):
-					return ACT.pickup($Player.m,valid_items[0][0],calc)
+					return ACT.pickup($Player.m,valid_items[0],calc)
 			_:
 				var onChoice = func onChoice_lambda(choice, calc):
 					return ACT.pickup($Player.m,choice,calc)

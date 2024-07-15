@@ -65,6 +65,7 @@ static func attack_phys(mob:Mob, target:Vector2i, calc:bool):
 
 static func pickup(mob:Mob,toPickUp:Item, calc:bool):
 	if not calc:
+		print(toPickUp.container_array)
 		toPickUp.free_from_container()
 		toPickUp.add_to_container(mob.items,mob)
 	return 50
@@ -78,9 +79,9 @@ static func drop(mob:Mob,toDrop:Item,calc:bool):
 
 static func harvest(tile:Tile, calc):
 	if not calc:
-		print("here, ",tile.f_feature)
 		tile.f_feature = -1
-		tile.i_items.append(Item.new("Stone","Mound"))
+		var i:Item = Item.new("Stone","Mound")
+		tile.i_items.append(i)
 	return 600
 
 static func wait() -> int:
