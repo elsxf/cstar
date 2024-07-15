@@ -1,0 +1,10 @@
+{
+	"The Cube":{
+		"shape":"Cube",
+		"material":"Stone",
+	},
+	"The Rod":{
+		"shape":"Rod",
+		"material":"Wood",
+	},
+}

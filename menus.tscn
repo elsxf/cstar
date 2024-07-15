@@ -1,0 +1,81 @@
+[gd_scene load_steps=6 format=3 uid="uid://bkt3oclpsb502"]
+
+[ext_resource type="Script" path="res://menus.gd" id="1_p438v"]
+[ext_resource type="FontFile" uid="uid://cylhjxuw36osc" path="res://fonts/FairfaxHaxHD.ttf" id="1_wmoxl"]
+[ext_resource type="StyleBox" uid="uid://bhmh15o8ptm68" path="res://styles/menu_panel.tres" id="2_6gd4m"]
+[ext_resource type="StyleBox" uid="uid://bjynygok08g8b" path="res://styles/menu_outline.tres" id="5_6s4cg"]
+
+[sub_resource type="Theme" id="Theme_jfvu3"]
+default_font = ExtResource("1_wmoxl")
+/styles/box = ExtResource("2_6gd4m")
+
+[node name="menus" type="Control"]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+script = ExtResource("1_p438v")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -540.0
+offset_top = -337.5
+offset_right = 540.0
+offset_bottom = 337.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_jfvu3")
+theme_override_styles/panel = ExtResource("2_6gd4m")
+
+[node name="Text" type="RichTextLabel" parent="Panel"]
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 19.0
+offset_top = 34.5
+offset_right = -45.0
+offset_bottom = -29.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/normal_font = ExtResource("1_wmoxl")
+theme_override_font_sizes/normal_font_size = 32
+theme_override_styles/focus = ExtResource("5_6s4cg")
+theme_override_styles/normal = ExtResource("5_6s4cg")
+bbcode_enabled = true
+text = "Lorem Ipsum [color=brown]Dolor[/color] sit amet"
+scroll_following = true
+
+[node name="Highlight" type="ColorRect" parent="Panel/Text"]
+z_as_relative = false
+layout_mode = 2
+offset_left = 21.0
+offset_top = -2.0
+offset_right = 561.0
+offset_bottom = 30.0
+color = Color(0, 0, 1, 1)
+
+[node name="Title" type="RichTextLabel" parent="Panel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 32.0
+offset_right = -32.0
+offset_bottom = 32.0
+grow_horizontal = 2
+theme_override_fonts/normal_font = ExtResource("1_wmoxl")
+theme_override_font_sizes/normal_font_size = 32
+bbcode_enabled = true
+text = "Title"
+autowrap_mode = 0

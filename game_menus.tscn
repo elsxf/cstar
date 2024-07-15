@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://bkt3oclpsb502"]
+
+[node name="game_menus" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TabContainer" type="TabContainer" parent="."]
+layout_mode = 0
+offset_right = 1928.0
+offset_bottom = 1083.0
+
+[node name="Inventory" type="Panel" parent="TabContainer"]
+layout_mode = 2
+
+[node name="Text" type="RichTextLabel" parent="TabContainer/Inventory"]
+layout_mode = 0
+offset_right = 1916.0
+offset_bottom = 1052.0
