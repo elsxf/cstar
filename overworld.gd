@@ -153,13 +153,11 @@ func _ready():
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 @warning_ignore("unused_parameter")
 func _process(delta):
-
 	pass
 	
 func _unhandled_input(event: InputEvent) -> void:
-	if DEF.gameState["focus"]!=DEF.Focus.WORLD or event.is_released() or not event.is_action_type():
+	if DEF.gameState["focus"]!=DEF.Focus.WORLD or event.is_released() or not (event.is_action_type() or event is InputEventMouseButton):
 		return
-	$Map.clear_layer(DEF.Layer_Names.Highlight)
 	
 	if(event.is_action("OpenInventory")):
 		$HUD/menus.display("Inventory", $Player.m.items)
@@ -197,7 +195,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		next_action = func move_vertical_lambda(calc):
 			return ACT.move_vertical($Player.m,current_map,vert_vector,0,calc)
 
-	
+	if(event.is_action("keybindings", true)):
+		var kblambda = func kbLambda(evt):
+			if  InputMap.action_get_events(evt).is_empty() or InputMap.action_get_events(evt)[0] is InputEventJoypadButton:
+				return ""
+			return OS.get_keycode_string(InputMap.action_get_events(evt)[0].keycode)
+		$HUD/menus.display("Keybindings", InputMap.get_actions(), kblambda)
 	
 	if(event.is_action("Center")):
 		next_action = func wait_lambda(_calc):
@@ -238,7 +241,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if(event.is_action("Harvest",true)):
 		var validTiles = []
 		for i in HEX.inRange($Player.m.curr_c(),1):
-			if current_map[i.x][i.y].f_feature!=-1:
+			if not current_map[i.x][i.y].f_name.is_empty():
 				validTiles.append(i)
 		match validTiles.size():
 			0:
@@ -250,7 +253,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			_:
 				for i in validTiles:
 					$Map.set_cell(DEF.Layer_Names.Highlight,i, 22, Vector2i(0, 0))
-					$HUD/menus.choiceTile()
+				var onChoice = func onChoice_lambda(choice, calc):
+					return ACT.harvest(current_map[choice.x][choice.y],calc)
+				$HUD/menus.choiceTile("Harvest where?", onChoice)
+	if(event.is_action("smash", true)):
+		var onChoice = func onChoice_lambda(choice, calc):
+			var result = ACT.smash(current_map[choice.x][choice.y],calc)
+			current_map[choice.x][choice.y].set_self($Map,choice)
+			return result
+		$HUD/menus.choiceTile("smash where?", onChoice)
 
 	if(next_action!=null):
 		Signals.emit_signal("Player_take_action",next_action)
@@ -268,6 +279,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	#for i in inRing($Player.curr_c(),cube_dist(oddr_to_axial(m_tile), $Player.curr_c())):
 		#$Map.set_cell(DEF.Layer_Names.Highlight,axial_to_oddr(i),1,Vector2i(0,0))
 	if event is InputEventMouseButton:
+		$Map.clear_layer(DEF.Layer_Names.Highlight)
 		var path = PATH.pathFind(m_tile,$Player.m.curr_c(),current_map)
 		if (path!=null):
 			for i in path:
@@ -276,6 +288,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_player_take_action(Action_Lambda) -> void:
 	$Player.m.next_action=Action_Lambda
+	$Map.clear_layer(DEF.Layer_Names.Highlight)
 	#timekeeping
 	while(1):
 		if $Player.m.can_act():
@@ -356,4 +369,3 @@ func _on_player_take_action(Action_Lambda) -> void:
 	do_LOS()
 	
 	Signals.emit_signal("Player_action_taken")
-

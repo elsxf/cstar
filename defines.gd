@@ -18,7 +18,7 @@ static var playerM
 
 static var debug_esp = false
 static var debug_coords = false
-static var debug_sightLine = true
+static var debug_sightLine = false
 
 enum vis_tile_names{
 	Unknown,Unseen,Seen
@@ -28,15 +28,6 @@ static var vis_t_dat = [
 	[10, Vector2(0,0),0],
 	[10, Vector2(0,0),1],
 	[10, Vector2(0,0),2],
-]
-
-enum feature_tile_names{
-	sUp,sDown,tree,
-}
-static var feature_t_dat = [
-	[14, Vector2(0,0),0,1,0],
-	[13, Vector2(0,0),0,1,0],
-	[9, Vector2(0,0),0,2,1],
 ]
 
 enum Focus{

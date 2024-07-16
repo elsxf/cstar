@@ -31,9 +31,9 @@ static func gen_overworld(chunk_coord: Vector2i):
 			else:
 				tName = DEF.terrain_dict["Surface_order"].back()
 			#chunk.set_cell(DEF.Layer_Names.Terrain,Vector2(i,j),DEF.over_t_dat[value][0],Vector2(0,0))
-			var feature = -1
+			var feature = ""
 			if(randi_range(0,100)==0):
-				feature = DEF.feature_tile_names.sDown
+				feature =&"DownStair"
 				#chunk.set_cell(DEF.Layer_Names.Features,Vector2(i,j),stair_down,Vector2(0,0))
 			var t = Tile.new(tName,feature)
 			chunk[i].append(t)
@@ -55,18 +55,18 @@ static func gen_surface(over_coord: Vector2i, over_tile : Tile):
 			var coord = Vector2(float(i-DEF.chunk_size/2)/DEF.chunk_size,float(j-DEF.chunk_size/2)/DEF.chunk_size)
 			var value = height_noise.get_noise_2dv(coord+Vector2(over_coord))
 			value = StringName(DEF.terrain_dict["Surface_order"][value_to_terrain(value)])
-			var feature = -1
+			var feature = ""
 			if(value==&"Forest"):
 				value=&"Plains"
 				#chunk.set_cell(DEF.Layer_Names.Features,Vector2(i,j),DEF.feature_t_dat[DEF.feature_tile_names.tree][0],Vector2(0,0))
-				feature = DEF.feature_tile_names.tree
+				feature = &"Tree"
 			if(value==&"Hills"):
 				value=&"Cave_Wall"
 			#chunk.set_cell(DEF.Layer_Names.Terrain,Vector2(i,j),DEF.over_t_dat[value][0],Vector2(0,0))
 			var t = Tile.new(value,feature)
 			chunk[i][j]=t
 	#chunk.set_cell(DEF.Layer_Names.Features,Vector2i(32,32),over_tile,Vector2(0,0))
-	chunk[32][32]=over_tile
+	chunk[32][32].f_name=over_tile.f_name
 	var result = [chunk,[]]
 	height_noise.domain_warp_enabled=false
 	return result
@@ -80,7 +80,6 @@ static func gen_dungeon(world_c:Vector2i, entry:Vector2i):
 		chunk[i]=[]
 		chunk[i].resize(DEF.chunk_size)
 		for j in range(DEF.chunk_size):
-			#BetterTerrain.set_cell(chunk,DEF.Layer_Names.Terrain,Vector2(i,j),0)
 			var t = Tile.new(&"Cave_Wall")
 			chunk[i][j]=t
 	var num_rooms = randi_range(5,17)
@@ -111,7 +110,7 @@ static func gen_dungeon(world_c:Vector2i, entry:Vector2i):
 				if chunk[k.x][k.y].get_m_cost()==-1:
 					chunk[k.x][k.y] = Tile.new(&"Cave_Floor")
 	#up stair at entry
-	chunk[entry.x][entry.y].f_feature = DEF.feature_tile_names.sUp
+	chunk[entry.x][entry.y].f_name = &"UpStair"
 	var my_item = Item.new("Stone","Cube")
 	my_item.add_to_container(chunk[entry.x][entry.y].i_items,chunk[entry.x][entry.y])
 	#chunk.set_cell(DEF.Layer_Names.Features,entry,stair_up,Vector2(0,0))
@@ -119,7 +118,7 @@ static func gen_dungeon(world_c:Vector2i, entry:Vector2i):
 	var rand_room = randi_range(1,num_rooms-1)
 	var size = room_size[rand_room] -1
 	var vec = room_loc[rand_room] + Vector2i(randi_range(0,size),randi_range(0,size))
-	chunk[vec.x][vec.y].f_feature = DEF.feature_tile_names.sDown
+	chunk[vec.x][vec.y].f_name = &"DownStair"
 	#chunk.set_cell(DEF.Layer_Names.Features,room_loc[randi_range(1,num_rooms-1)],stair_down,Vector2(0,0))
 	
 	var numMobs = randi_range(8,15)

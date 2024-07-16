@@ -43,10 +43,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 19.0
-offset_top = 34.5
-offset_right = -45.0
-offset_bottom = -29.5
+offset_left = 32.0
+offset_top = 32.0
+offset_right = -540.0
+offset_bottom = -32.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_fonts/normal_font = ExtResource("1_wmoxl")
@@ -55,15 +55,14 @@ theme_override_styles/focus = ExtResource("5_6s4cg")
 theme_override_styles/normal = ExtResource("5_6s4cg")
 bbcode_enabled = true
 text = "Lorem Ipsum [color=brown]Dolor[/color] sit amet"
-scroll_following = true
+scroll_active = false
+autowrap_mode = 0
 
 [node name="Highlight" type="ColorRect" parent="Panel/Text"]
 z_as_relative = false
 layout_mode = 2
-offset_left = 21.0
-offset_top = -2.0
-offset_right = 561.0
-offset_bottom = 30.0
+offset_right = 508.0
+offset_bottom = 32.0
 color = Color(0, 0, 1, 1)
 
 [node name="Title" type="RichTextLabel" parent="Panel"]
@@ -78,4 +77,47 @@ theme_override_fonts/normal_font = ExtResource("1_wmoxl")
 theme_override_font_sizes/normal_font_size = 32
 bbcode_enabled = true
 text = "Title"
+autowrap_mode = 0
+
+[node name="Panel2" type="RichTextLabel" parent="Panel"]
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 540.0
+offset_top = 32.0
+offset_right = -32.0
+offset_bottom = -32.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/normal_font = ExtResource("1_wmoxl")
+theme_override_font_sizes/normal_font_size = 32
+theme_override_styles/focus = ExtResource("5_6s4cg")
+theme_override_styles/normal = ExtResource("5_6s4cg")
+bbcode_enabled = true
+text = "lambdamode"
+scroll_active = false
+autowrap_mode = 0
+
+[node name="TitleCard" type="RichTextLabel" parent="."]
+visible = false
+clip_contents = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -74.0
+offset_top = -520.0
+offset_right = 74.0
+offset_bottom = -484.0
+grow_horizontal = 2
+theme_override_fonts/normal_font = ExtResource("1_wmoxl")
+theme_override_font_sizes/normal_font_size = 32
+theme_override_styles/focus = ExtResource("2_6gd4m")
+theme_override_styles/normal = ExtResource("2_6gd4m")
+bbcode_enabled = true
+text = "Tile Card"
+fit_content = true
+scroll_active = false
 autowrap_mode = 0

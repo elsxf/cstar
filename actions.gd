@@ -33,10 +33,8 @@ static func move_horizontal(mob,Map:Array,move_vector:Vector3i,move_mode:int = M
 	return 0#cant move there, fix this later
 	
 static func move_vertical(mob:Mob,Map:Array,move_vector:int,move_mode:int = Move_Modes.WALK,calc:bool = false)->int:	
-	var curr_feature = Map[mob.curr_c().x][mob.curr_c().y].f_feature
-	var stair_down = DEF.feature_tile_names.sDown
-	var stair_up = DEF.feature_tile_names.sUp
-	if( ((curr_feature==stair_down or mob.d_level==-1) and move_vector==1) or ((curr_feature==stair_up or mob.d_level==0) and move_vector==-1)):
+	var curr_feature = Map[mob.curr_c().x][mob.curr_c().y].f_name
+	if( ((curr_feature==&"DownStair" or mob.d_level==-1) and move_vector==1) or ((curr_feature==&"UpStair" or mob.d_level==0) and move_vector==-1)):
 		if not calc:
 			mob.d_level+=move_vector
 			#$Player.FOV = []
@@ -65,7 +63,6 @@ static func attack_phys(mob:Mob, target:Vector2i, calc:bool):
 
 static func pickup(mob:Mob,toPickUp:Item, calc:bool):
 	if not calc:
-		print(toPickUp.container_array)
 		toPickUp.free_from_container()
 		toPickUp.add_to_container(mob.items,mob)
 	return 50
@@ -79,10 +76,28 @@ static func drop(mob:Mob,toDrop:Item,calc:bool):
 
 static func harvest(tile:Tile, calc):
 	if not calc:
-		tile.f_feature = -1
-		var i:Item = Item.new("Stone","Mound")
-		tile.i_items.append(i)
+		var harvest_data = DEF.terrain_dict[tile.f_name]["harvest"]
+		for entry in harvest_data:
+			#TODO: chance outputs
+			var itemData = entry.split(" ")
+			var i:Item = Item.new(itemData[0],itemData[1])
+			i.add_to_container(tile.i_items,tile)
+		tile.f_name = ""
 	return 600
+
+static func smash(tile:Tile, calc):
+	if not calc:
+		var feature = tile.f_name
+		if not feature.is_empty() and DEF.terrain_dict[feature].has("destroy_f"):
+			tile.t_name = DEF.terrain_dict[feature]["destroy_f"]
+		elif DEF.terrain_dict[tile.t_name].has("destroy_t"):
+			if DEF.terrain_dict[tile.t_name].has("destroy_f"):
+				tile.f_name = DEF.terrain_dict[tile.t_name]["destroy_f"]
+			tile.t_name = DEF.terrain_dict[tile.t_name]["destroy_t"]
+		else:
+			DEF.textBuffer+= "[color=brown]nothing to smash![/color]"
+	return 100
+
 
 static func wait() -> int:
 	return 50
