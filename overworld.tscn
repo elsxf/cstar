@@ -1,4 +1,4 @@
-[gd_scene load_steps=60 format=3 uid="uid://63wxav1bwk3a"]
+[gd_scene load_steps=61 format=3 uid="uid://63wxav1bwk3a"]
 
 [ext_resource type="Texture2D" uid="uid://b0ymsbrq6gcn3" path="res://hex.png" id="1_2quo0"]
 [ext_resource type="Script" path="res://overworld.gd" id="1_hie4k"]
@@ -32,6 +32,7 @@
 [ext_resource type="Script" path="res://Map.gd" id="22_tcips"]
 [ext_resource type="FontFile" uid="uid://cylhjxuw36osc" path="res://fonts/FairfaxHaxHD.ttf" id="23_22nso"]
 [ext_resource type="PackedScene" uid="uid://bkt3oclpsb502" path="res://menus.tscn" id="28_yc6qf"]
+[ext_resource type="StyleBox" uid="uid://bhmh15o8ptm68" path="res://styles/menu_panel.tres" id="31_raslp"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_f88v2"]
 resource_name = "base"
@@ -970,15 +971,15 @@ script = ExtResource("22_3d860")
 
 [node name="Panel" type="ColorRect" parent="HUD"]
 anchors_preset = -1
-anchor_left = 0.729167
-anchor_right = 0.994792
+anchor_left = 0.73125
+anchor_right = 0.992709
 anchor_bottom = 0.989815
 offset_left = 3.99939
 offset_right = 13.9994
 offset_bottom = 10.9998
 grow_horizontal = 2
 size_flags_vertical = 0
-color = Color(0.243137, 0.243137, 0.243137, 1)
+color = Color(0.815686, 0, 0.945098, 1)
 metadata/_edit_use_anchors_ = true
 
 [node name="Term" type="RichTextLabel" parent="HUD/Panel"]
@@ -987,12 +988,12 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -503.0
-offset_bottom = 7.0
+offset_top = -504.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_fonts/normal_font = ExtResource("23_22nso")
 theme_override_font_sizes/normal_font_size = 24
+theme_override_styles/normal = ExtResource("31_raslp")
 bbcode_enabled = true
 scroll_active = false
 scroll_following = true
@@ -1002,12 +1003,14 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -260.0
-offset_right = 260.0
-offset_bottom = 560.0
+offset_left = -256.0
+offset_right = 256.0
+offset_bottom = 576.0
 grow_horizontal = 2
 theme_override_fonts/normal_font = ExtResource("23_22nso")
 theme_override_font_sizes/normal_font_size = 32
+theme_override_styles/focus = ExtResource("31_raslp")
+theme_override_styles/normal = ExtResource("31_raslp")
 bbcode_enabled = true
 text = "HP :  d/d		Mp : dd
 last action : func_name

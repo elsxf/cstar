@@ -1,4 +1,7 @@
 {
+	"Flags":{
+		"Feature_override":1,
+	},
 	"Surface_order":["Hills","Forest","Plains","Sand","Water","Deep_Water"],
 	"Hills":{
 		"source":4,
@@ -53,7 +56,7 @@
 		"v_cost":0,
 	},
 	
-	"Terrain_order":["Tree","UpStair","DownStair"],
+	"Feature_order":["Tree","UpStair","DownStair"],
 	"Tree":{
 		"source":9,
 		"A_coord_x":0,"A_coord_y":0,
@@ -67,6 +70,7 @@
 		"m_cost":1,
 		"v_cost":0,
 		"harvest":["Stone Mound"],
+		"construct":{"Stone Mound":2},
 	},
 	"DownStair":{
 		"source":13,
@@ -74,6 +78,7 @@
 		"m_cost":1,
 		"v_cost":0,
 		"harvest":["Stone Mound"],
+		"construct":{"Stone Mound":2},
 	},
 	"Rubble":{
 		"source":25,
@@ -82,4 +87,12 @@
 		"v_cost":1,
 		"harvest":["Stone Mound"],
 	},
+	"Wooden Bridge":{
+		"source":6,
+		"A_coord_x":0,"A_coord_y":0,
+		"m_cost":1,
+		"v_cost":1,
+		"harvest":["Wood Log"],
+		"construct":{"Wood Log":3},
+	}
 }

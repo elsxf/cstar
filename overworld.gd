@@ -146,7 +146,6 @@ func _ready():
 	offset_map()
 
 	Signals.Player_take_action.connect(_on_player_take_action)
-	
 	pass # Replace with function body.
 
 
@@ -159,23 +158,103 @@ func _unhandled_input(event: InputEvent) -> void:
 	if DEF.gameState["focus"]!=DEF.Focus.WORLD or event.is_released() or not (event.is_action_type() or event is InputEventMouseButton):
 		return
 	
-	if(event.is_action("OpenInventory")):
-		$HUD/menus.display("Inventory", $Player.m.items)
 	
-	var next_action
+	var next_action = null
 	var horiz_vector = null
-	if(event.is_action("Left")):
-		horiz_vector =HEX.dir_vec[3]
-	if(event.is_action("Right")):
-		horiz_vector =HEX.dir_vec[0]
-	if(event.is_action("URight")):
-		horiz_vector =HEX.dir_vec[1]
-	if(event.is_action("DRight")):
-		horiz_vector =HEX.dir_vec[5]
-	if(event.is_action("ULeft")):
-		horiz_vector =HEX.dir_vec[2]
-	if(event.is_action("DLeft")):
-		horiz_vector =HEX.dir_vec[4]
+	var vert_vector = null
+	
+	match DEF.getEventAction(event):
+		"OpenInventory":
+			$HUD/menus.display("Inventory", $Player.m.items)
+		"keybindings":
+			var kblambda = func kbLambda(key):
+				return DEF.actionBinds[key]
+			$HUD/menus.display("Keybindings", DEF.actionBinds.keys(), kblambda)
+		"Left":
+			horiz_vector =HEX.dir_vec[3]
+		"Right":
+			horiz_vector =HEX.dir_vec[0]
+		"URight":
+			horiz_vector =HEX.dir_vec[1]
+		"DRight":
+			horiz_vector =HEX.dir_vec[5]
+		"ULeft":
+			horiz_vector =HEX.dir_vec[2]
+		"DLeft":
+			horiz_vector =HEX.dir_vec[4]
+		"MDown":
+			vert_vector=1
+		"MUp":
+			vert_vector=-1
+		"Center":
+			next_action = func wait_lambda(_calc):
+					return ACT.wait()
+		"auto":
+			for i in HEX.get_surround($Player.m.curr_c()):
+				if current_map[i.x][i.y].m_mob!=null:
+					if DEF.hasFlag(current_map[i.x][i.y].m_mob.hostile_to, $Player.m.faction):
+						next_action = func attack_p_lambda(calc):
+							return ACT.attack_phys($Player.m,i,calc)
+						break
+			if next_action == null:
+				DEF.textBuffer+="[color=brown]Nothing to attack\n[/color]"
+				next_action = func wait_lambda(_calc):
+					return ACT.wait()
+		"pickup":
+			var valid_items = []
+			for i in HEX.inRange($Player.m.curr_c(),1):
+				valid_items.append_array(current_map[i.x][i.y].i_items)
+			match valid_items.size():
+				0:
+					DEF.textBuffer+="nothing to pick up\n"
+				1:
+					next_action = func pickup_lambda(calc):
+						return ACT.pickup($Player.m,valid_items[0],calc)
+				_:
+					var onChoice = func onChoice_lambda(choice, calc):
+						return ACT.pickup($Player.m,choice,calc)
+					$HUD/menus.choiceOf("Pickup", valid_items, onChoice)
+		"drop":
+			#TODO:select tile to drop on
+			var onChoice = func onChoice_lambda(choice, calc):
+				return ACT.drop($Player.m,choice,calc)
+			$HUD/menus.choiceOf("Drop", $Player.m.items, onChoice)
+			#var choice =  await Signal($HUD/menus,'choiceMade')
+			#next_action = func drop_lambda(calc):
+						#return ACT.drop($Player.m,choice,calc)
+		"Harvest":
+			var validTiles = []
+			for i in HEX.inRange($Player.m.curr_c(),1):
+				if not current_map[i.x][i.y].f_name.is_empty():
+					validTiles.append(i)
+			match validTiles.size():
+				0:
+					DEF.textBuffer+="[color=brown]nothing to harvest![/color]"
+				1:
+					var toHarvest = current_map[validTiles[0].x][validTiles[0].y]
+					next_action= func harvest_lambda(calc):
+						return ACT.harvest(toHarvest, calc)
+				_:
+					for i in validTiles:
+						$Map.set_cell(DEF.Layer_Names.Highlight,i, 22, Vector2i(0, 0))
+					var choice = await $HUD/menus/Popup.popVector("Harvest Where?")
+					print(choice)
+					if choice!=null:
+						var target = HEX.add_2_3($Player.m.curr_c(),choice)
+						next_action = func Harvest_lambda(calc):
+							return ACT.harvest(current_map[target.x][target.y],calc)
+		"smash":
+			var onChoice = func onChoice_lambda(choice, calc):
+				var result = ACT.smash(current_map[choice.x][choice.y],calc)
+				current_map[choice.x][choice.y].set_self($Map,choice)
+				return result
+			$HUD/menus.choiceTile("smash where?", onChoice)
+		#"construct":
+			#var onChoice = func onChoice_lambda(choice_feat,choice_tile,calc):
+				#return ACT.construct(choice_feat,choice_tile,calc)
+			#$HUD/menus.choiceOf("Constuct",)
+			#pass
+
 	if(horiz_vector!=null):
 		var target_tile =HEX.add_2_3($Player.m.curr_c(),horiz_vector)
 		if(DEF.isInChunk(target_tile)):
@@ -186,82 +265,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				next_action = func attack_p_lambda(calc):
 					return ACT.attack_phys($Player.m,target_tile,calc)
 					
-	var vert_vector = null
-	if(event.is_action("Down")):
-		vert_vector=1
-	if(event.is_action("Up")):
-		vert_vector=-1
 	if(vert_vector!=null):
 		next_action = func move_vertical_lambda(calc):
 			return ACT.move_vertical($Player.m,current_map,vert_vector,0,calc)
-
-	if(event.is_action("keybindings", true)):
-		var kblambda = func kbLambda(evt):
-			if  InputMap.action_get_events(evt).is_empty() or InputMap.action_get_events(evt)[0] is InputEventJoypadButton:
-				return ""
-			return OS.get_keycode_string(InputMap.action_get_events(evt)[0].keycode)
-		$HUD/menus.display("Keybindings", InputMap.get_actions(), kblambda)
-	
-	if(event.is_action("Center")):
-		next_action = func wait_lambda(_calc):
-				return ACT.wait()
-	if(event.is_action("ui_focus_next")):
-		for i in HEX.get_surround($Player.m.curr_c()):
-			if current_map[i.x][i.y].m_mob!=null:
-				if DEF.hasFlag(current_map[i.x][i.y].m_mob.hostile_to, $Player.m.faction):
-					next_action = func attack_p_lambda(calc):
-						return ACT.attack_phys($Player.m,i,calc)
-					break
-		if next_action == null:
-			DEF.textBuffer+="[color=brown]Nothing to attack\n[/color]"
-			next_action = func wait_lambda(_calc):
-				return ACT.wait()
-	if(event.is_action("pickup")):
-		var valid_items = []
-		for i in HEX.inRange($Player.m.curr_c(),1):
-			valid_items.append_array(current_map[i.x][i.y].i_items)
-		match valid_items.size():
-			0:
-				DEF.textBuffer+="nothing to pick up\n"
-			1:
-				next_action = func pickup_lambda(calc):
-					return ACT.pickup($Player.m,valid_items[0],calc)
-			_:
-				var onChoice = func onChoice_lambda(choice, calc):
-					return ACT.pickup($Player.m,choice,calc)
-				$HUD/menus.choiceOf("Pickup", valid_items, onChoice)
-	if(event.is_action("drop")):
-		#TODO:select tile to drop on
-		var onChoice = func onChoice_lambda(choice, calc):
-			return ACT.drop($Player.m,choice,calc)
-		$HUD/menus.choiceOf("Drop", $Player.m.items, onChoice)
-		#var choice =  await Signal($HUD/menus,'choiceMade')
-		#next_action = func drop_lambda(calc):
-					#return ACT.drop($Player.m,choice,calc)
-	if(event.is_action("Harvest",true)):
-		var validTiles = []
-		for i in HEX.inRange($Player.m.curr_c(),1):
-			if not current_map[i.x][i.y].f_name.is_empty():
-				validTiles.append(i)
-		match validTiles.size():
-			0:
-				DEF.textBuffer+="[color=brown]nothing to harvest![/color]"
-			1:
-				var toHarvest = current_map[validTiles[0].x][validTiles[0].y]
-				next_action= func harvest_lambda(calc):
-					return ACT.harvest(toHarvest, calc)
-			_:
-				for i in validTiles:
-					$Map.set_cell(DEF.Layer_Names.Highlight,i, 22, Vector2i(0, 0))
-				var onChoice = func onChoice_lambda(choice, calc):
-					return ACT.harvest(current_map[choice.x][choice.y],calc)
-				$HUD/menus.choiceTile("Harvest where?", onChoice)
-	if(event.is_action("smash", true)):
-		var onChoice = func onChoice_lambda(choice, calc):
-			var result = ACT.smash(current_map[choice.x][choice.y],calc)
-			current_map[choice.x][choice.y].set_self($Map,choice)
-			return result
-		$HUD/menus.choiceTile("smash where?", onChoice)
 
 	if(next_action!=null):
 		Signals.emit_signal("Player_take_action",next_action)
