@@ -16,6 +16,8 @@
 	"?":"keybindings",
 	"Tab":"auto",
 	"Shift+Tab":"b_auto",
+	"z":"zoom",
+	"Z":"b_zoom",
 	"&":"craft",
 	"*":"construct",
 }

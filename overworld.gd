@@ -14,6 +14,9 @@ var saveState ={
 
 
 var tile_offset = Vector2(-32,-32)#tilesize / 2 * scale
+var zoomScale = 2.0
+var zoomMin = .25
+var zoomMax = 4
 
 var current_level
 var current_coords
@@ -169,7 +172,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		"keybindings":
 			var kblambda = func kbLambda(key):
 				return DEF.actionBinds[key]
+			print("here")
 			$HUD/menus.display("Keybindings", DEF.actionBinds.keys(), kblambda)
+		"zoom":
+			zoomScale *=2
+			if zoomScale>zoomMax:
+				zoomScale=zoomMin
+		"b_zoom":
+			zoomScale = zoomScale / 2
+			if zoomScale<zoomMin:
+				zoomScale=zoomMax
 		"Left":
 			horiz_vector =HEX.dir_vec[3]
 		"Right":
@@ -290,6 +302,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if (path!=null):
 			for i in path:
 				$Map.set_cell(DEF.Layer_Names.Highlight,i,1,Vector2i(0,0))
+	$Map.scale = DEF.tile_scale*zoomScale
+	offset_map()
 
 
 func _on_player_take_action(Action_Lambda) -> void:
@@ -342,10 +356,8 @@ func _on_player_take_action(Action_Lambda) -> void:
 		#load stuff
 		$Map.clear()
 		if($Player.m.d_level==-1):
-			$Map.scale = DEF.tile_scale * 2
 			load_chunk(saveState[SAVE_OVERWORLD])
 		else:
-			$Map.scale = DEF.tile_scale
 			if(saveState[SAVE_DUNGEONS].has($Player.m.world_c) and saveState[SAVE_DUNGEONS][$Player.m.world_c].size()>$Player.m.d_level):
 				#area already generated, load from save
 				load_chunk(saveState[SAVE_DUNGEONS][$Player.m.world_c][$Player.m.d_level])
@@ -371,6 +383,7 @@ func _on_player_take_action(Action_Lambda) -> void:
 	#set all known to unseen
 
 	#move map
+	$Map.scale = DEF.tile_scale*zoomScale
 	offset_map()
 	do_LOS()
 	

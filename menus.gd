@@ -101,9 +101,10 @@ func _unhandled_key_input(event):
 	if event.is_action("ui_left", true) or event.is_action("ui_right", true):
 		highLight_idx.x= 0 if highLight_idx.x else 1
 	if event.is_action("ui_select"):
+		var select_idx = highLight_idx.y + $MenuBack/Text.get_v_scroll_bar().value/32
 		match mode:
 			Mode.CHOICE_OF:
-				var choiceMade = ContainerSrc.pop_at(highLight_idx.y)
+				var choiceMade = ContainerSrc.pop_at(select_idx)
 				var action_lambda = func menu_action_lambda(calc):
 					return onChoiceLambda.call(choiceMade,calc)
 				Signals.emit_signal("Player_take_action",action_lambda)
@@ -113,7 +114,7 @@ func _unhandled_key_input(event):
 						#TODO: verbose display of item
 						pass
 					"Keybindings":
-						DEF.actionBinds[ContainerSrc[highLight_idx.y]] = await $Popup.popInput("Enter a new Key:")
+						DEF.actionBinds[ContainerSrc[select_idx]] = await $Popup.popInput("Enter a new Key:")
 						DEF.keyBinds = DEF.reverseDict(DEF.actionBinds)
 						#TODO: remap keys
 						pass

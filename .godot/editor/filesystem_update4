@@ -1,12 +1,9 @@
-res://menus.tscn
+res://overworld.tscn
 res://styles/menu_panel.tres
 res://highilght.gdshader
-res://construction.json
-res://overworld.tscn
+res://keybind.json
+res://overworld.gd
 res://hitSpark.tscn
 res://game_over.tscn
+res://menus.tscn
 res://menus.gd
-res://overworld.gd
-res://Popup.gd
-res://defines.gd
-res://hexFuncs.gd
