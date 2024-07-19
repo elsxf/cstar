@@ -80,6 +80,13 @@ static func wear(mob:Mob,toWear:Item,calc:bool):
 		toWear.add_to_container(mob.worn,mob)
 	return 50
 
+static func wield(mob:Mob,toWield:Item,calc:bool):
+	if not calc:
+		toWield.free_from_container()
+		toWield.container = mob
+		mob.wield=toWield
+	return 25
+
 static func harvest(tile:Tile, calc):
 	if not calc:
 		var harvest_data = DEF.terrain_dict[tile.f_name]["harvest"]

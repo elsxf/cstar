@@ -168,14 +168,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	
 	match DEF.getEventAction(event):
 		"OpenInventory":
-			$HUD/menus.displayLists("Inventory", [$Player.m.items],["Items Carried\n"],[[$Player.m.wield],$Player.m.worn],["Wielded\n","Worn\n"])
-			print("items:",$Player.m.items)
-			print("worn:",$Player.m.worn)
+			$HUD/menus/GMenu
+			$HUD/menus/GMenu.enter_menu("Inventory")
 		"keybindings":
 			var kblambda = func kbLambda(key):
 				return DEF.actionBinds[key]
 			print("here")
-			$HUD/menus.display("Keybindings", DEF.actionBinds.keys(), kblambda)
+			$HUD/menus/GMenu.enter_menu("Keybindings")
 		"zoom":
 			zoomScale *=2
 			if zoomScale>zoomMax:
@@ -242,6 +241,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			var onChoice = func onChoice_lambda(choice, calc):
 				return ACT.wear($Player.m,choice,calc)
 			$HUD/menus.choiceOf("wear what?", $Player.m.items, onChoice)
+		"wield":
+			var onChoice = func onChoice_lambda(choice, calc):
+				return ACT.wield($Player.m,choice,calc)
+			$HUD/menus.choiceOf("wield what?", $Player.m.items, onChoice)
 		"Harvest":
 			var validTiles = []
 			for i in HEX.inRange($Player.m.curr_c(),1):

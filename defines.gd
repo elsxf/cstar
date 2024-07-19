@@ -82,9 +82,7 @@ static func prevFocus():
 	return true
 	
 static func hasFlag(has:int,flags:int) -> bool:
-	if(has&flags):
-		return true
-	return false
+	return (has&flags)
 	
 static func rollDice(num:int, dice:int) -> int:
 	var sum = 0
@@ -108,6 +106,18 @@ static func toBar(part, total, numchars:int = 2, color:bool = true):
 	if color:
 		result += "[/color]"
 	result+="[/b]"
+	return result
+
+static func listStr(itemList:Array)->String:
+	var result = ""
+	for i in itemList:
+		result+=str(i)+"\n"
+	return result
+	
+static func lambdaStr(itemList:Array, ListLambda)->String:
+	var result = ""
+	for i in itemList:
+		result+=str(ListLambda.call(i))+"\n"
 	return result
 
 static func isInChunk(coord:Vector2i) -> bool:

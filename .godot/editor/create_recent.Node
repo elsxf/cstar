@@ -1,10 +1,13 @@
+TabBar
+GridContainer
 RichTextLabel
 Panel
+Control
+TabContainer
 PopupMenu
 CanvasLayer
 ColorRect
 BackBufferCopy
-TabContainer
 Label
 PopupPanel
 ReferenceRect

@@ -1,8 +1,8 @@
 [gd_scene load_steps=7 format=3 uid="uid://bkt3oclpsb502"]
 
-[ext_resource type="Script" path="res://menus.gd" id="1_p438v"]
 [ext_resource type="FontFile" uid="uid://cylhjxuw36osc" path="res://fonts/FairfaxHaxHD.ttf" id="1_wmoxl"]
 [ext_resource type="StyleBox" uid="uid://bhmh15o8ptm68" path="res://styles/menu_panel.tres" id="2_6gd4m"]
+[ext_resource type="Script" path="res://MenuBack.gd" id="3_aybue"]
 [ext_resource type="StyleBox" uid="uid://bjynygok08g8b" path="res://styles/menu_outline.tres" id="5_6s4cg"]
 [ext_resource type="Script" path="res://Popup.gd" id="5_shgk7"]
 
@@ -20,11 +20,8 @@ anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 4
-script = ExtResource("1_p438v")
 
-[node name="MenuBack" type="Panel" parent="."]
-unique_name_in_owner = true
-visible = false
+[node name="GMenu" type="Panel" parent="."]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -32,24 +29,46 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -540.0
-offset_top = -337.5
+offset_top = -337.0
 offset_right = 540.0
-offset_bottom = 337.5
+offset_bottom = 357.0
 grow_horizontal = 2
 grow_vertical = 2
 theme = SubResource("Theme_jfvu3")
 theme_override_styles/panel = ExtResource("2_6gd4m")
+script = ExtResource("3_aybue")
 
-[node name="Text" type="RichTextLabel" parent="MenuBack"]
+[node name="Panel2" type="RichTextLabel" parent="GMenu"]
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 540.0
+offset_top = 46.0
+offset_right = -32.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/normal_font = ExtResource("1_wmoxl")
+theme_override_font_sizes/normal_font_size = 32
+theme_override_styles/focus = ExtResource("5_6s4cg")
+theme_override_styles/normal = ExtResource("5_6s4cg")
+bbcode_enabled = true
+text = "lambdamode"
+scroll_active = false
+autowrap_mode = 0
+
+[node name="Panel1" type="RichTextLabel" parent="GMenu"]
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 32.0
-offset_top = 32.0
+offset_top = 46.0
 offset_right = -540.0
-offset_bottom = -32.0
+offset_bottom = -40.0
 grow_horizontal = 2
 grow_vertical = 2
 focus_mode = 2
@@ -63,89 +82,65 @@ scroll_active = false
 autowrap_mode = 0
 selection_enabled = true
 
-[node name="Highlight" type="ColorRect" parent="MenuBack/Text"]
+[node name="Highlight" type="ColorRect" parent="GMenu/Panel1"]
 z_as_relative = false
 layout_mode = 2
 offset_right = 508.0
 offset_bottom = 32.0
 color = Color(0, 0, 1, 1)
 
-[node name="Title" type="RichTextLabel" parent="MenuBack"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 32.0
-offset_right = -32.0
-offset_bottom = 32.0
-grow_horizontal = 2
-theme_override_fonts/normal_font = ExtResource("1_wmoxl")
-theme_override_font_sizes/normal_font_size = 32
-bbcode_enabled = true
-text = "Title"
-autowrap_mode = 0
+[node name="Pages" type="TabBar" parent="GMenu"]
+layout_mode = 0
+offset_top = 0.5
+offset_right = 1080.0
+offset_bottom = 40.5
+theme_override_fonts/font = ExtResource("1_wmoxl")
+theme_override_font_sizes/font_size = 32
+tab_count = 3
+drag_to_rearrange_enabled = true
+tab_0/title = "Inventory"
+tab_1/title = "Keybinds"
+tab_2/title = "Character"
 
-[node name="Panel2" type="RichTextLabel" parent="MenuBack"]
-z_index = 1
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 540.0
-offset_top = 32.0
-offset_right = -32.0
-offset_bottom = -32.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_fonts/normal_font = ExtResource("1_wmoxl")
-theme_override_font_sizes/normal_font_size = 32
-theme_override_styles/focus = ExtResource("5_6s4cg")
-theme_override_styles/normal = ExtResource("5_6s4cg")
-bbcode_enabled = true
-text = "lambdamode"
-scroll_active = false
-autowrap_mode = 0
-
-[node name="TitleCard" type="RichTextLabel" parent="."]
+[node name="Popup" type="GridContainer" parent="."]
 visible = false
-clip_contents = false
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -74.0
-offset_top = -520.0
-offset_right = 74.0
-offset_bottom = -484.0
-grow_horizontal = 2
-theme_override_fonts/normal_font = ExtResource("1_wmoxl")
-theme_override_font_sizes/normal_font_size = 32
-theme_override_styles/focus = ExtResource("2_6gd4m")
-theme_override_styles/normal = ExtResource("2_6gd4m")
-bbcode_enabled = true
-text = "Tile Card"
-fit_content = true
-scroll_active = false
-autowrap_mode = 0
-
-[node name="Popup" type="RichTextLabel" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = 64.0
-offset_top = -256.0
-offset_right = 216.0
-offset_bottom = -210.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/normal = ExtResource("2_6gd4m")
-bbcode_enabled = true
-text = "I am a popup!"
-fit_content = true
-autowrap_mode = 0
+layout_mode = 0
+offset_left = -102.0
+offset_top = -412.0
+offset_right = 114.0
+offset_bottom = -332.0
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = -2
 script = ExtResource("5_shgk7")
 
-[connection signal="visibility_changed" from="Popup" to="Popup" method="_on_visibility_changed"]
+[node name="PopupTitle" type="RichTextLabel" parent="Popup"]
+layout_mode = 2
+theme_override_fonts/normal_font = ExtResource("1_wmoxl")
+theme_override_font_sizes/normal_font_size = 32
+theme_override_styles/normal = ExtResource("2_6gd4m")
+bbcode_enabled = true
+text = "Popup Title"
+fit_content = true
+autowrap_mode = 0
+
+[node name="PopupText" type="RichTextLabel" parent="Popup"]
+z_index = 1
+layout_mode = 2
+theme_override_fonts/normal_font = ExtResource("1_wmoxl")
+theme_override_font_sizes/normal_font_size = 32
+theme_override_styles/normal = ExtResource("5_6s4cg")
+bbcode_enabled = true
+text = "I am a popup!
+more text
+options even!"
+fit_content = true
+autowrap_mode = 0
+metadata/_edit_group_ = true
+
+[node name="Highlight" type="ColorRect" parent="Popup/PopupText"]
+z_as_relative = false
+offset_right = 508.0
+offset_bottom = 32.0
+color = Color(0, 0, 1, 1)
+
+[connection signal="visibility_changed" from="Popup/PopupText" to="Popup/PopupText" method="_on_visibility_changed"]

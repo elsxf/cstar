@@ -6,8 +6,9 @@ static var n_s = [0,2,6,8,10,14]#djecency codes
 static var dir_vec = [
 	Vector3i(+1, 0, -1), Vector3i(+1, -1, 0), Vector3i(0, -1, +1), 
 	Vector3i(-1, 0, +1), Vector3i(-1, +1, 0), Vector3i(0, +1, -1), 
+	Vector3i(0,0,0)
 ]#start with right, ccw
-static var dir_str = {"Right":0, "URight":1, "ULeft":2, "Left":3, "DLeft":4, "DRight":5}
+static var dir_str = {"Right":0, "URight":1, "ULeft":2, "Left":3, "DLeft":4, "DRight":5, "Center":6}
 
 static func axial_to_oddr(hex : Vector3i):
 	var col = hex.x + (hex.y - abs(hex.y)%2) / 2

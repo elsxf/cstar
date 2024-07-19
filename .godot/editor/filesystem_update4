@@ -15,3 +15,6 @@ res://items.json
 res://mat_defs.json
 res://menus.gd
 res://actions.gd
+res://hexFuncs.gd
+res://Popup.gd
+res://MenuBack.gd
