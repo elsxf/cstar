@@ -1,6 +1,6 @@
 {
 	"Player":{
-		"hp":1000,
+		"hp":50,
 		"sightRange":5,
 		"atkDice":2,
 		"atkSides":4,

@@ -1,4 +1,4 @@
-[gd_scene load_steps=61 format=3 uid="uid://63wxav1bwk3a"]
+[gd_scene load_steps=62 format=3 uid="uid://63wxav1bwk3a"]
 
 [ext_resource type="Texture2D" uid="uid://b0ymsbrq6gcn3" path="res://hex.png" id="1_2quo0"]
 [ext_resource type="Script" path="res://overworld.gd" id="1_hie4k"]
@@ -33,6 +33,7 @@
 [ext_resource type="FontFile" uid="uid://cylhjxuw36osc" path="res://fonts/FairfaxHaxHD.ttf" id="23_22nso"]
 [ext_resource type="PackedScene" uid="uid://bkt3oclpsb502" path="res://menus.tscn" id="28_yc6qf"]
 [ext_resource type="StyleBox" uid="uid://bhmh15o8ptm68" path="res://styles/menu_panel.tres" id="31_raslp"]
+[ext_resource type="FontFile" uid="uid://5m30eafh3gff" path="res://fonts/FairfaxSMHD.ttf" id="33_lim3d"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_f88v2"]
 resource_name = "base"
@@ -979,7 +980,7 @@ offset_right = 13.9994
 offset_bottom = 10.9998
 grow_horizontal = 2
 size_flags_vertical = 0
-color = Color(0.815686, 0, 0.945098, 1)
+color = Color(0.815686, 0, 0.945098, 0)
 metadata/_edit_use_anchors_ = true
 
 [node name="Term" type="RichTextLabel" parent="HUD/Panel"]
@@ -989,6 +990,7 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = -504.0
+offset_right = -0.0012207
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_fonts/normal_font = ExtResource("23_22nso")
@@ -1008,11 +1010,16 @@ offset_right = 256.0
 offset_bottom = 576.0
 grow_horizontal = 2
 theme_override_fonts/normal_font = ExtResource("23_22nso")
+theme_override_fonts/bold_font = ExtResource("33_lim3d")
 theme_override_font_sizes/normal_font_size = 32
+theme_override_font_sizes/bold_font_size = 32
+theme_override_font_sizes/italics_font_size = 32
+theme_override_font_sizes/bold_italics_font_size = 32
+theme_override_font_sizes/mono_font_size = 32
 theme_override_styles/focus = ExtResource("31_raslp")
 theme_override_styles/normal = ExtResource("31_raslp")
 bbcode_enabled = true
-text = "HP :  d/d		Mp : dd
+text = "HP : [b] |||||[/b]	 Mp : ||\\..
 last action : func_name
 last action cost : 50
 time units : 

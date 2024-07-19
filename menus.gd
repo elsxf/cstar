@@ -3,6 +3,7 @@ extends Control
 enum Mode{CHOICE_OF,DISPLAY,TILE}
 
 var ContainerSrc = null
+var ContainerSrc2 = null
 var ContainerLambda = null
 var highLight_idx = Vector2i(DEF.LEFT,0)
 var title : String = ""
@@ -15,6 +16,7 @@ func choiceOf(tabName:String, choices:Array, onchoice_lambda):
 	onChoiceLambda = onchoice_lambda
 	highLight_idx = Vector2i(DEF.LEFT,0)
 	$MenuBack.visible = true
+	$MenuBack/Panel2.visible = false
 	$TitleCard.visible = false
 	$Popup.visible = false
 	DEF.changeFocus(DEF.Focus.GAME_MENU)
@@ -29,7 +31,38 @@ func choiceTile(tabName:String,onchoice_lambda):
 	$TitleCard.text = tabName
 	DEF.changeFocus(DEF.Focus.GAME_MENU)
 	
+func displayLists(tabName:String, panel1Lists:Array = [], panel1Names:Array = [], Panel2Lists:Array = [], Panel2Names:Array = []):
+	title = tabName
+	mode = Mode.DISPLAY
+	highLight_idx = Vector2i(DEF.LEFT,0)
+	$MenuBack.visible = true
+	$TitleCard.visible = false
+	$Popup.visible = false
+	$MenuBack/Text.text = ""
+	$MenuBack/Panel2.text = ""
+	DEF.changeFocus(DEF.Focus.GAME_MENU)
+	
+	if not panel1Lists.is_empty():
+		$MenuBack/Text.visible = true
+		ContainerSrc = []
+		for i in range(panel1Lists.size()):
+			ContainerSrc.append_array(panel1Lists[i])
+			if i<panel1Names.size():
+				print("got here :",panel1Names[i])
+				$MenuBack/Text.text+=panel1Names[i]
+			$MenuBack/Text.text+=listStr(panel1Lists[i])
+	
+	if not Panel2Lists.is_empty():
+		$MenuBack/Panel2.visible = true
+		ContainerSrc2 = []
+		for i in range(Panel2Lists.size()):
+			ContainerSrc2.append_array(Panel2Lists[i])
+			if i<Panel2Names.size()-1:
+				$MenuBack/Panel2.text+=Panel2Names[i]
+			$MenuBack/Panel2.text+=listStr(Panel2Lists[i])
+	
 func display(tabName:String, panel1:Array = [], panel2_lambda = null):
+	#displays list in panel 1 and does panel2_lambda to each item and displays the result in panel 2
 	title = tabName
 	mode = Mode.DISPLAY
 	highLight_idx = Vector2i(DEF.LEFT,0)
@@ -63,6 +96,9 @@ func closeMenu():
 	$MenuBack.visible = false
 	$TitleCard.visible = false
 	$Popup.visible = false
+	ContainerLambda=null
+	ContainerSrc=null
+	ContainerSrc2=null
 	DEF.changeFocus(DEF.Focus.WORLD)
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -75,7 +111,9 @@ func _process(delta):
 		$MenuBack/Title.text = "[color=pink][u]"+title+"[/u][/color]\n"
 		if(ContainerSrc!=null):
 			$MenuBack/Text.text = listStr(ContainerSrc)
-		if(ContainerLambda!=null):
+		if (ContainerSrc2!=null):
+			$MenuBack/Panel2.text = listStr(ContainerSrc2)
+		elif(ContainerLambda!=null):
 			$MenuBack/Panel2.text = lambdaStr(ContainerSrc)
 		#move highlight
 		if( $MenuBack/Text/Highlight.position.y!=-1):

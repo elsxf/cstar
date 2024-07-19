@@ -74,6 +74,12 @@ static func drop(mob:Mob,toDrop:Item,calc:bool):
 		toDrop.add_to_container(tile.i_items,tile)
 	return 10
 
+static func wear(mob:Mob,toWear:Item,calc:bool):
+	if not calc:
+		toWear.free_from_container()
+		toWear.add_to_container(mob.worn,mob)
+	return 50
+
 static func harvest(tile:Tile, calc):
 	if not calc:
 		var harvest_data = DEF.terrain_dict[tile.f_name]["harvest"]

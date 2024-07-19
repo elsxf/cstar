@@ -16,6 +16,8 @@ var time_u : int = 0
 var speed : int = 100
 
 var items : Array = []
+var worn : Array = []
+var wield : Item = null
 
 @export var Hp_max : int
 var Hp : int

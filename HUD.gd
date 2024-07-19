@@ -17,7 +17,7 @@ func _process(_delta):
 		DEF.textBuffer = ""
 		
 	#Info panel pdate
-	$Panel/Info.text = "HP : "+str(DEF.playerM.Hp)+"/"+str(DEF.playerM.Hp_max)+"\n"\
+	$Panel/Info.text = "HP :"+DEF.toBar(DEF.playerM.Hp,DEF.playerM.Hp_max,5)+"\n"\
 	+"Last Action : "+last_action_name+"\n"\
 	+"last action cost : "+str(last_action_cost)+"\n"\
 	+"time units : "+str(DEF.playerM.time_u)+"\n"\

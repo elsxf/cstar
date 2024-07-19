@@ -168,7 +168,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	
 	match DEF.getEventAction(event):
 		"OpenInventory":
-			$HUD/menus.display("Inventory", $Player.m.items)
+			$HUD/menus.displayLists("Inventory", [$Player.m.items],["Items Carried\n"],[[$Player.m.wield],$Player.m.worn],["Wielded\n","Worn\n"])
+			print("items:",$Player.m.items)
+			print("worn:",$Player.m.worn)
 		"keybindings":
 			var kblambda = func kbLambda(key):
 				return DEF.actionBinds[key]
@@ -182,6 +184,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			zoomScale = zoomScale / 2
 			if zoomScale<zoomMin:
 				zoomScale=zoomMax
+		"save&quit":
+			$HUD/menus/Popup.popInput(str(saveState))
 		"Left":
 			horiz_vector =HEX.dir_vec[3]
 		"Right":
@@ -234,9 +238,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			#var choice =  await Signal($HUD/menus,'choiceMade')
 			#next_action = func drop_lambda(calc):
 						#return ACT.drop($Player.m,choice,calc)
+		"wear":
+			var onChoice = func onChoice_lambda(choice, calc):
+				return ACT.wear($Player.m,choice,calc)
+			$HUD/menus.choiceOf("wear what?", $Player.m.items, onChoice)
 		"Harvest":
 			var validTiles = []
 			for i in HEX.inRange($Player.m.curr_c(),1):
+				if not DEF.isInChunk(i):
+					continue
 				if not current_map[i.x][i.y].f_name.is_empty():
 					validTiles.append(i)
 			match validTiles.size():

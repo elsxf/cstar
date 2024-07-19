@@ -75,9 +75,11 @@ static func changeFocus(focus:int):
 	gameState["focus"] = focus
 
 static func prevFocus():
-	var temp = gameState["prevFocus"]
-	gameState["prevFocus"] = gameState["focus"]
-	gameState["focus"] = temp
+	if gameState["prevFocus"]==null:
+		return false
+	gameState["focus"] = gameState["prevFocus"]
+	gameState["prevFocus"] = null
+	return true
 	
 static func hasFlag(has:int,flags:int) -> bool:
 	if(has&flags):
@@ -89,20 +91,36 @@ static func rollDice(num:int, dice:int) -> int:
 	for i in range(num):
 		sum+=randi_range(1,dice)
 	return sum
-	
+
+static func toBar(part, total, numchars:int = 2, color:bool = true):
+	var percent:float = float(part)/total
+	var colors = ["red","yellow","green"]
+	var result = "[b]"
+	if color:
+		result += "[color="+colors[lerp(0,2,percent)]+"] "
+	for i in range(numchars):
+		if i<percent*numchars:
+			result += "|"
+		elif i<percent*numchars+1:
+			result+="\\"
+		else:
+			result+="."
+	if color:
+		result += "[/color]"
+	result+="[/b]"
+	return result
+
 static func isInChunk(coord:Vector2i) -> bool:
 	return not (coord.x>=chunk_size or coord.y>=chunk_size or coord.x<0 or coord.y<0)
 	
 static func evtMatch(event:InputEvent,char:String):
 	return char(event.unicode)==char
 
-
 static func getEventAction(event:InputEvent):
 	if event is InputEventKey:
 		var keyStr = getEventStr(event)
 		if DEF.keyBinds.has(keyStr):
 			return DEF.keyBinds[keyStr]
-		
 
 static var keyExceptions = ["Tab", "Shift+Tab"]
 static func getEventStr(event:InputEvent)->String:

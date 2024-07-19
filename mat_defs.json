@@ -31,4 +31,7 @@
 	"Metal":{
 		"color":"#b6bebf"
 		},	
+	"Cloth":{
+		"color":"#454545"
+	},
 }

@@ -7,4 +7,8 @@
 		"shape":"Rod",
 		"material":"Wood",
 	},
+	"Robe":{
+		"shape":"Clothing",
+		"material":"Cloth",
+	},
 }
