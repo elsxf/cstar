@@ -128,7 +128,6 @@ static func gen_dungeon(world_c:Vector2i, entry:Vector2i):
 		var m = Mob.new("Guy")
 		var mobLoc = room_loc[room_idx] + Vector2i(randi_range(-space,space),randi_range(-space,space))
 		m.add_to_data(chunk,mobs,world_c,1,mobLoc)
-		#print("placed guy at ",m.curr_c())
 	var result = [chunk,mobs]
 	return result
 	

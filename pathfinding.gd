@@ -58,7 +58,6 @@ static func pathFind(start: Vector2i, goal: Vector2i, Map : Array, mode=Astar_mo
 			#$TileMap.set_cell(1,n,1,Vector2i(0,0))
 		#$TileMap.set_cell(1,frontier.back(),6,Vector2i(0,0))
 		#await get_tree().create_timer(.1).timeout
-		#print("size:"+str(frontier.size()))
 	var result = []
 	while(came_from[current]!=null):
 		result.append(current)

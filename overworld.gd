@@ -173,8 +173,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		"keybindings":
 			var kblambda = func kbLambda(key):
 				return DEF.actionBinds[key]
-			print("here")
-			$HUD/menus/GMenu.enter_menu("Keybindings")
+			$HUD/menus/GMenu.enter_menu("Keybinds")
 		"zoom":
 			zoomScale *=2
 			if zoomScale>zoomMax:
@@ -226,25 +225,27 @@ func _unhandled_input(event: InputEvent) -> void:
 					next_action = func pickup_lambda(calc):
 						return ACT.pickup($Player.m,valid_items[0],calc)
 				_:
-					var onChoice = func onChoice_lambda(choice, calc):
-						return ACT.pickup($Player.m,choice,calc)
-					$HUD/menus.choiceOf("Pickup", valid_items, onChoice)
+					var onChoice = func onChoice_lambda(choice):
+						Signals.emit_signal("Player_take_action",func action_lambda(calc):return ACT.pickup($Player.m,choice,calc))
+					$HUD/menus/Popup.popChoice("Pickup", valid_items, false,onChoice)
 		"drop":
 			#TODO:select tile to drop on
-			var onChoice = func onChoice_lambda(choice, calc):
-				return ACT.drop($Player.m,choice,calc)
-			$HUD/menus.choiceOf("Drop", $Player.m.items, onChoice)
+			var onChoice = func onChoice_lambda(choice):
+				Signals.emit_signal("Player_take_action",func drop_lambda(calc):return ACT.drop($Player.m,choice,calc))
+			$HUD/menus/Popup.popChoice("Drop", $Player.m.items, false, onChoice)
 			#var choice =  await Signal($HUD/menus,'choiceMade')
 			#next_action = func drop_lambda(calc):
 						#return ACT.drop($Player.m,choice,calc)
 		"wear":
-			var onChoice = func onChoice_lambda(choice, calc):
-				return ACT.wear($Player.m,choice,calc)
-			$HUD/menus.choiceOf("wear what?", $Player.m.items, onChoice)
+			var onChoice = func onChoice_lambda(choice):
+				Signals.emit_signal("Player_take_action", func wear_lambda(calc):
+					return ACT.wear($Player.m,choice,calc))
+			$HUD/menus/Popup.popChoice("wear what?", $Player.m.items, false, onChoice)
 		"wield":
-			var onChoice = func onChoice_lambda(choice, calc):
-				return ACT.wield($Player.m,choice,calc)
-			$HUD/menus.choiceOf("wield what?", $Player.m.items, onChoice)
+			var onChoice = func onChoice_lambda(choice):
+				Signals.emit_signal("Player_take_action", func wield_lambda(calc):
+					return ACT.wield($Player.m,choice,calc))
+			$HUD/menus/Popup.popChoice("wield what?", $Player.m.items, false, onChoice)
 		"Harvest":
 			var validTiles = []
 			for i in HEX.inRange($Player.m.curr_c(),1):
@@ -263,17 +264,18 @@ func _unhandled_input(event: InputEvent) -> void:
 					for i in validTiles:
 						$Map.set_cell(DEF.Layer_Names.Highlight,i, 22, Vector2i(0, 0))
 					var choice = await $HUD/menus/Popup.popVector("Harvest Where?")
-					print(choice)
 					if choice!=null:
 						var target = HEX.add_2_3($Player.m.curr_c(),choice)
 						next_action = func Harvest_lambda(calc):
 							return ACT.harvest(current_map[target.x][target.y],calc)
 		"smash":
-			var onChoice = func onChoice_lambda(choice, calc):
-				var result = ACT.smash(current_map[choice.x][choice.y],calc)
-				current_map[choice.x][choice.y].set_self($Map,choice)
-				return result
-			$HUD/menus.choiceTile("smash where?", onChoice)
+			var choice = await $HUD/menus/Popup.popVector("Smash Where?")
+			if choice!=null:
+				var target =HEX.add_2_3($Player.m.curr_c(),choice)
+				next_action = func onChoice_lambda(calc):
+					var result = ACT.smash(current_map[target.x][target.y],calc)
+					current_map[choice.x][choice.y].set_self($Map,choice)
+					return result
 		#"construct":
 			#var onChoice = func onChoice_lambda(choice_feat,choice_tile,calc):
 				#return ACT.construct(choice_feat,choice_tile,calc)

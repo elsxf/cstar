@@ -37,7 +37,8 @@ func popChoice(popupText:String, choiceList:Array, closeOnChoice:bool = true, on
 	$PopupTitle.text = popupText
 	choices_array = choiceList
 	while 1:
-		var chosen = choiceList[await Signal(self,'validInput')]	
+		var chosen = choiceList[await Signal(self,'validInput')]
+		print("got here")
 		if onChoiceLambda == null:
 			return chosen
 		onChoiceLambda.call(chosen)
@@ -48,17 +49,21 @@ func popChoice(popupText:String, choiceList:Array, closeOnChoice:bool = true, on
 func _unhandled_key_input(event: InputEvent) -> void:
 	if DEF.gameState["focus"]!=DEF.Focus.POPUP_MENU or event.is_released():
 		return
+	if(event.is_action("ui_cancel")):
+			close_popup()
 	if (not DEF.getEventStr(event).is_empty()) and mode == MODE.INPUT:
 		close_popup()
 		validInput.emit(DEF.getEventStr(event))
 		get_viewport().set_input_as_handled()
-	if (mode == MODE.INPUT):
+	if (mode == MODE.CHOICE):
+		print(highlight_idx)
 		if(event.is_action("ui_down")):
 			highlight_idx +=1
 		if(event.is_action("ui_up")):
 			highlight_idx -=1
 		if(event.is_action("ui_select")):
 			validInput.emit(highlight_idx)
+			choices_array.pop(highlight_idx)
 		get_viewport().set_input_as_handled()
 			
 # Called when the node enters the scene tree for the first time.
@@ -69,6 +74,7 @@ func _ready() -> void:
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	$PopupText/Highlight.position.y = highlight_idx*32
+	$PopupText.text = DEF.listStr(choices_array)
 	pass
 
 

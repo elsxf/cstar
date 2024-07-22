@@ -5,7 +5,7 @@ var highlight_idx = Vector2i(0,0)
 func _ready() -> void:
 	pass # Replace with function body.
 
-func enter_menu(menuName):
+func enter_menu(menuName:String):
 	highlight_idx = Vector2i(0,0)
 	DEF.changeFocus(DEF.Focus.GAME_MENU)
 	self.visible = true
@@ -42,7 +42,6 @@ func _process(delta: float) -> void:
 func _unhandled_key_input(event: InputEvent) -> void:
 	if DEF.gameState["focus"]!=DEF.Focus.GAME_MENU or event.is_released():
 		return
-	print(DEF.getEventStr(event))
 	if(event.is_action("ui_down")):
 		highlight_idx.y +=1
 		if highlight_idx.y>=19:
@@ -54,15 +53,27 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		if highlight_idx.y<0:
 			highlight_idx.y +=1
 			$Panel1.scroll_to_line($Panel1.get_v_scroll_bar().value/32 - 1)
-	if(DEF.getEventAction(event)=="auto"):
-		print("here")
-		$Pages.current_tab+=1
-		if $Pages.current_tab>=$Pages.tab_count:
-			$Pages.current_tab = 0
-	if(DEF.getEventAction(event)=="b_auto"):
-		$Pages.current_tab-=1
-		if $Pages.current_tab<0:
-			$Pages.current_tab = $Pages.tab_count - 1
+	match DEF.getEventAction(event):
+		"auto":
+			if $Pages.current_tab==$Pages.tab_count-1:
+				$Pages.current_tab = 0
+			else:
+				$Pages.current_tab+=1
+		"b_auto":
+			if $Pages.current_tab==0:
+				$Pages.current_tab = $Pages.tab_count - 1
+			else:
+				$Pages.current_tab-=1
+		"OpenInventory":
+			if $Pages.get_tab_title($Pages.current_tab)=="Inventory":
+				close_menu()
+			else:
+				enter_menu("Inventory")
+		"keybindings":
+			if $Pages.get_tab_title($Pages.current_tab)=="Keybinds":
+				close_menu()
+			else:
+				enter_menu("Keybinds")
 	if(event.is_action("ui_select")):
 		#TODO: the thing
 		pass
