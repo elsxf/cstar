@@ -225,13 +225,14 @@ func _unhandled_input(event: InputEvent) -> void:
 						return ACT.pickup($Player.m,valid_items[0],calc)
 				_:
 					var onChoice = func onChoice_lambda(choice):
+						valid_items.erase(choice)
 						Signals.emit_signal("Player_take_action",func action_lambda(calc):return ACT.pickup($Player.m,choice,calc))
-					$HUD/menus/Popup.popChoice("Pickup", valid_items, false,onChoice)
+					$HUD/menus/Popup.popChoice("Pickup what?", valid_items, false,onChoice)
 		"drop":
 			#TODO:select tile to drop on
 			var onChoice = func onChoice_lambda(choice):
 				Signals.emit_signal("Player_take_action",func drop_lambda(calc):return ACT.drop($Player.m,choice,calc))
-			$HUD/menus/Popup.popChoice("Drop", $Player.m.items, false, onChoice)
+			$HUD/menus/Popup.popChoice("Drop what?", $Player.m.items, false, onChoice)
 			#var choice =  await Signal($HUD/menus,'choiceMade')
 			#next_action = func drop_lambda(calc):
 						#return ACT.drop($Player.m,choice,calc)

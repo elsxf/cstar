@@ -21,8 +21,6 @@ var wield : Item = null
 
 @export var Hp_max : int
 var Hp : int
-@export var attack : int
-@export var sides : int
 
 var factionStr : String
 @export var faction : int
@@ -38,9 +36,20 @@ func _init(mob_name:String):
 	self.name = mob_name
 	self.Hp_max = DEF.mob_dict[mob_name]["hp"]
 	self.Hp = self.Hp_max
-	self.attack = DEF.mob_dict[mob_name]["atkDice"]
 	self.sight_range = DEF.mob_dict[mob_name]["sightRange"]
-	self.sides =  DEF.mob_dict[mob_name]["atkSides"]
+	if DEF.mob_dict[mob_name].has("wear"):
+		for w in DEF.mob_dict[mob_name]["wear"]:
+			var parsed = w.split(" ")
+			if parsed.size()==1:
+				Item.new(parsed[0]).add_to_container(worn,self)
+			else:
+				Item.new(parsed[0], parsed[1]).add_to_container(worn,self)
+	if DEF.mob_dict[mob_name].has("wield"):
+		var parsed = DEF.mob_dict[mob_name]["wield"].split(" ")
+		if parsed.size() == 1:
+			wield = Item.new(parsed[0])
+		else:
+			wield = Item.new(parsed[0],parsed[1])
 	self.speed = DEF.mob_dict[mob_name]["speed"]
 	self.tile_id = DEF.mob_dict[mob_name]["source"]
 	self.tile_coord = Vector2i(DEF.mob_dict[mob_name]["A_coord_x"],DEF.mob_dict[mob_name]["A_coord_y"])

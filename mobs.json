@@ -14,8 +14,8 @@
 	"Guy":{
 		"hp":10,
 		"sightRange":4,
-		"atkDice":1,
-		"atkSides":2,
+		"wield":"Metal Sword",
+		"wear":["Robe"],
 		"speed":40,
 		"source":15,
 		"A_coord_x":0,"A_coord_y":0,

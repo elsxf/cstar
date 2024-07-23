@@ -49,15 +49,27 @@ static func attack_phys(mob:Mob, target:Vector2i, calc:bool):
 		if targetMob==null:
 			return 0#no longer a target, refund
 		#TODO:hit/miss calc
-		var damage = DEF.rollDice(mob.attack,mob.sides)
-		targetMob.change_hp(-damage)
+		var preArmorDamage = 0
+		var postArmorDamage = 0
+		if(mob.wield==null):
+			var strength = 1
+			var skill = 6
+			preArmorDamage = DEF.rollDice(strength,skill)
+		else:
+			var blunt = mob.wield.blunt
+			var cut = mob.wield.cut
+			var pierce = mob.wield.pierce
+			preArmorDamage = DEF.rollDice(blunt/3,2) + DEF.rollDice(cut/5,5)
+			postArmorDamage = DEF.rollDice(pierce/10,20)
+		var damageTotal = min(0,preArmorDamage) + postArmorDamage
+		targetMob.change_hp(-damageTotal)
 		if(targetMob==DEF.playerM):
 			DEF.textBuffer+="[color=red]"
 		elif(mob==DEF.playerM):
 			DEF.textBuffer+="[color=green]"
 		else:
 			DEF.textBuffer+="[color=yellow]"
-		DEF.textBuffer+=(str(mob)+" dealt "+str(damage)+" damage to "+str(targetMob)+"[/color]\n")
+		DEF.textBuffer+=(str(mob)+" dealt "+str(preArmorDamage)+"/"+str(postArmorDamage)+" damage to "+str(targetMob)+"[/color]\n")
 		next_hit_spark = targetMob.curr_c()
 	return 25
 
