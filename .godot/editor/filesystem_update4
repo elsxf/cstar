@@ -4,9 +4,9 @@ res://highilght.gdshader
 res://hitSpark.tscn
 res://game_over.tscn
 res://menus.tscn
-res://overworld.gd
-res://Popup.gd
-res://generation.gd
+res://defines.gd
+res://item.gd
 res://MenuBack.gd
-res://pathfinding.gd
-res://actions.gd
+res://Popup.gd
+res://styles/menu_outline.tres
+res://overworld.gd

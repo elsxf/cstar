@@ -91,7 +91,6 @@ static func harvest(tile:Tile, calc):
 	if tile.f_name.is_empty() or not DEF.terrain_dict[tile.f_name].has("harvest"):
 		return 0
 	if not calc:
-		print(tile.f_name)
 		var harvest_data = DEF.terrain_dict[tile.f_name]["harvest"]
 		for entry in harvest_data:
 			#TODO: chance outputs

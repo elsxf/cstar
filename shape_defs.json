@@ -1,0 +1,46 @@
+{
+	"Flags":{
+		"hasPoint":1,
+		"clothOnly":2,
+		"woodOnly":4,
+		"metalOnly":8,
+		"hasEdge":16
+	},
+	"default_shape":{
+		"source":19,
+		"A_coord_x":0,
+		"A_coord_y":0,
+		"flags":[],
+		"to_hit":-2,
+	},
+	
+	
+	"Cube":{
+		"source":19,
+		"A_coord_x":0,
+		"A_coord_y":0,
+	},
+	"Rod":{
+		"source":20,
+		"A_coord_x":0,
+		"A_coord_y":0,
+		"to_hit":1,
+	},
+	"Mound":{
+		"source":21,
+		"A_coord_x":0,
+		"A_coord_y":0,
+	},
+	"Log":{
+		"source":23,
+		"A_coord_x":0,
+		"A_coord_y":0,
+	},
+	
+	"Clothing":{
+		"source":19,
+		"A_coord_x":0,
+		"A_coord_y":0,
+		"flags":["clothOnly"],
+	},
+	}

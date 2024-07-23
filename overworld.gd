@@ -128,12 +128,14 @@ func hex_to_pixel(tile):#gets center pixel of tilemap cell
 	
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	
+	DEF.process_json()
 	var h = get_viewport_rect().size.y
 	$VP.size = Vector2(h*(1+1.6)/2,h)
 	
 	DEF.playerM = $Player.m
-	
+	Item.new("Wood","Log").add_to_container($Player.m.items,$Player.m)
+	Item.new("Stone","Cube").add_to_container($Player.m.items,$Player.m)
+	Item.new("Robe").add_to_container($Player.m.items,$Player.m)
 	GEN.init_random()
 	
 	$Map.clear()
@@ -158,9 +160,9 @@ func _process(delta):
 	pass
 	
 func _unhandled_input(event: InputEvent) -> void:
-	if DEF.gameState["focus"]!=DEF.Focus.WORLD or event.is_released() or not (event.is_action_type() or event is InputEventMouseButton):
+	if DEF.gameState[&"focus"]!=DEF.Focus.WORLD or event.is_released() or not (event.is_action_type() or event is InputEventMouseButton):
 		return
-	
+	get_viewport().set_input_as_handled()
 	
 	var next_action = null
 	var horiz_vector = null
@@ -168,11 +170,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	
 	match DEF.getEventAction(event):
 		"OpenInventory":
-			$HUD/menus/GMenu
 			$HUD/menus/GMenu.enter_menu("Inventory")
 		"keybindings":
-			var kblambda = func kbLambda(key):
-				return DEF.actionBinds[key]
 			$HUD/menus/GMenu.enter_menu("Keybinds")
 		"zoom":
 			zoomScale *=2
@@ -325,7 +324,7 @@ func _on_player_take_action(Action_Lambda) -> void:
 	$Player.m.next_action=Action_Lambda
 	$Map.clear_layer(DEF.Layer_Names.Highlight)
 	#timekeeping
-	while(1):
+	while($Player.m.Hp>0):
 		if $Player.m.can_act():
 			$HUD.last_action_cost=$Player.m.get_tu_cost()
 			$HUD.last_action_name=$Player.m.get_action_str()
@@ -343,8 +342,8 @@ func _on_player_take_action(Action_Lambda) -> void:
 						m.act()
 						if(ACT.next_hit_spark!=null):
 							hitSpark(ACT.next_hit_spark)
-					
-	
+
+
 	if($Player.m.Hp<=0):
 		get_tree().root.add_child(preload("res://game_over.tscn").instantiate())
 		queue_free()

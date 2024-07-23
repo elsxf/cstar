@@ -5,11 +5,14 @@ signal validInput(input)
 var mode = MODE.INPUT
 var highlight_idx = 0
 var choices_array = []
-enum MODE{INPUT,CHOICE}
+enum MODE{INPUT,CHOICE,ALERT}
 
 
 func close_popup():
 	self.visible = false
+	$PopupText.text = ""
+	$PopupTitle.text = ""
+	choices_array = []
 	DEF.prevFocus()
 	
 func popInput(popupText):
@@ -37,8 +40,10 @@ func popChoice(popupText:String, choiceList:Array, closeOnChoice:bool = true, on
 	$PopupTitle.text = popupText
 	choices_array = choiceList
 	while 1:
-		var chosen = choiceList[await Signal(self,'validInput')]
-		print("got here")
+		var choice = await Signal(self,'validInput')
+		if typeof(choice)!=TYPE_INT:
+			break
+		var chosen = choiceList[choice]
 		if onChoiceLambda == null:
 			return chosen
 		onChoiceLambda.call(chosen)
@@ -47,24 +52,24 @@ func popChoice(popupText:String, choiceList:Array, closeOnChoice:bool = true, on
 	pass
 	
 func _unhandled_key_input(event: InputEvent) -> void:
-	if DEF.gameState["focus"]!=DEF.Focus.POPUP_MENU or event.is_released():
+	if DEF.gameState[&"focus"]!=DEF.Focus.POPUP_MENU or event.is_released():
 		return
+	get_viewport().set_input_as_handled()
 	if(event.is_action("ui_cancel")):
 			close_popup()
+			validInput.emit(DEF.getEventStr(null))
 	if (not DEF.getEventStr(event).is_empty()) and mode == MODE.INPUT:
 		close_popup()
 		validInput.emit(DEF.getEventStr(event))
-		get_viewport().set_input_as_handled()
 	if (mode == MODE.CHOICE):
-		print(highlight_idx)
 		if(event.is_action("ui_down")):
 			highlight_idx +=1
 		if(event.is_action("ui_up")):
 			highlight_idx -=1
 		if(event.is_action("ui_select")):
 			validInput.emit(highlight_idx)
-			choices_array.pop(highlight_idx)
-		get_viewport().set_input_as_handled()
+			#choices_array.pop_at(highlight_idx)
+
 			
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -80,7 +85,7 @@ func _process(delta: float) -> void:
 
 func _on_visibility_changed() -> void:
 	highlight_idx = 0
-	if %MenuBack.visible == false:
+	if %GMenu.visible == false:
 		position = Vector2i(0,0)
 	else:
 		position = Vector2i(-64,-256)

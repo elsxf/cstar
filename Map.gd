@@ -9,10 +9,10 @@ func _tile_data_runtime_update(layer: int, coords: Vector2i, tile_data: TileData
 			var tileMob = currTile.m_mob
 			if tileMob==null:
 				return
-			tile_data.modulate = Color(DEF.mob_dict[tileMob.name]["color"])
+			tile_data.modulate = Color(DEF.mob_dict[tileMob.name][&"color"])
 		DEF.Layer_Names.Items:
 			var tileItem = currTile.i_items[0]
-			tile_data.modulate = Color(DEF.mDefs[tileItem.mat]["color"])
+			tile_data.modulate = Color(DEF.mDefs[tileItem.mat][&"color"])
 	
 func _use_tile_data_runtime_update(layer: int, coords: Vector2i):
 	if layer == DEF.Layer_Names.Mobs or layer == DEF.Layer_Names.Items:
