@@ -44,6 +44,7 @@ static var mob_dict = JSON.parse_string(FileAccess.get_file_as_string("mobs.json
 static var faction_dict = JSON.parse_string(FileAccess.get_file_as_string("factions.json"))
 static var item_dict = JSON.parse_string(FileAccess.get_file_as_string("items.json"))
 static var terrain_dict = JSON.parse_string(FileAccess.get_file_as_string("terrain.json"))
+static var construct_dict = JSON.parse_string(FileAccess.get_file_as_string("construction.json"))
 static var mDefs = JSON.parse_string(FileAccess.get_file_as_string("mat_defs.json"))
 static var sDefs = JSON.parse_string(FileAccess.get_file_as_string("shape_defs.json"))
 		
@@ -65,7 +66,7 @@ static func process_json():
 			var flagsToInt = 0
 			if dict[entry].has(&"flags"):
 				for flag in dict[entry][&"flags"]:
-					flagsToInt = flagsToInt & int(dict[&"Flags"][flag])
+					flagsToInt = flagsToInt | int(dict[&"Flags"][flag])
 			dict[entry][&"flags"] = flagsToInt
 			
 static func reverseDict(dict:Dictionary)->Dictionary:
@@ -108,11 +109,24 @@ static func prevFocus():
 static func hasFlag(has:int,flags:int) -> bool:
 	return (has&flags)
 	
+static func getProperty(dict:Dictionary,item:StringName,property:StringName):
+	if dict[item].has(property):
+		return dict[item][property]
+	if dict[item].has(&"inherits"):
+		return getProperty(dict,dict[item][&"inherits"],property)
+	return dict[&"default"][property]
+
 static func rollDice(num:int, dice:int) -> int:
+	if num<1 or dice<1:
+		return 0
 	var sum = 0
 	for i in range(num):
 		sum+=randi_range(1,dice)
 	return sum
+
+static func contest(stat1,stat2)->int:
+	#returns negative if stat1 wins, positive if stat2 wins, 0 if tie
+	return (rollDice(3,6)+stat2)-(rollDice(3,6)+stat1)
 
 static func toBar(part, total, numchars:int = 2, color:bool = true):
 	var percent:float = float(part)/total

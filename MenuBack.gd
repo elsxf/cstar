@@ -33,12 +33,13 @@ func close_menu():
 	DEF.prevFocus()
 
 func draw_elements(elements:Dictionary, panel:RichTextLabel):
-	panel.text = ""
 	for names in elements.keys():
 		if not names.is_empty():
 			panel.text += "[color=pink][u]"+names+"[/u][/color]\n"
 		if(typeof(elements[names])==TYPE_ARRAY):
 			panel.text += DEF.listStr(elements[names])
+		elif(typeof(elements[names])==TYPE_DICTIONARY):
+			draw_elements(elements[names], panel)
 		else:
 			panel.text += str(elements[names])+"\n"
 		
@@ -92,20 +93,48 @@ func _process(delta: float) -> void:
 				right_elements["Wielded"] = DEF.playerM.wield
 			right_elements["Items Worn"] = DEF.playerM.worn
 			right_array = arrayFromDict(right_elements)
-			#$Panel1.text = "[color=pink][u]Items carried:[/u][/color]\n" + DEF.listStr(DEF.playerM.items)
-			#$Panel2.text = "[color=brown]Nothing wielded[/color]" if DEF.playerM.wield==null else str(DEF.playerM.wield)
-			#$Panel2.text += "\n[color=pink][u]Items Worn:[/u][/color]\n"+ DEF.listStr(DEF.playerM.worn)
 		"Keybinds":
 			left_elements["Actions"] = DEF.actionBinds.keys()
 			left_array = DEF.actionBinds.keys()
 			right_elements["Controls"] = DEF.actionBinds.values()
 			right_array = DEF.actionBinds.values()
-			#$Panel1.text = DEF.listStr(DEF.actionBinds.keys())
-			#$Panel2.text = DEF.listStr(DEF.actionBinds.values())
 			Panel2_enabled = false
 			active_panel = LEFT
 		"Character":
 			pass
+		"Construct":
+			left_elements["Constuctions"] = DEF.construct_dict.keys()
+			left_array = DEF.construct_dict.keys()
+			right_elements["Needs"] = DEF.construct_dict[left_array[left_idx]]
+			right_array = []
+			Panel2_enabled = false
+			active_panel = LEFT
+		"Craft":
+			left_elements["Crafts"] = DEF.sDefs.keys().slice(2)
+			left_array = DEF.sDefs.keys()
+			#build recipie
+			var recipie = {}
+			var item = left_array[left_idx]
+			var itemFlags = DEF.getProperty(DEF.sDefs,item,&"flags")
+			var reqFlag = 0
+			reqFlag |= int(DEF.mDefs[&"Flags"][&"isShapeable"]) if DEF.hasFlag(itemFlags, DEF.sDefs[&"Flags"][&"needsShapeable"]) else 0
+			reqFlag |= int(DEF.mDefs[&"Flags"][&"isCloth"]) if DEF.hasFlag(itemFlags, DEF.sDefs[&"Flags"][&"needsClothLike"]) else 0
+			recipie["Count"] = str(DEF.getProperty(DEF.sDefs,item,&"m_count")) + "# of:"
+			#TODO: get surrounding items too
+			var player_mats = []
+			for i in DEF.playerM.items:
+				if reqFlag & DEF.mDefs[i.mat][&"flags"] != reqFlag:
+						continue;
+				if not player_mats.has(i.mat):
+					player_mats.append(i.mat)
+					
+			recipie["Materials"] = player_mats
+			right_elements["Needs"] = recipie
+			right_array = []
+			Panel2_enabled = false
+			active_panel = LEFT
+	$Panel1.text = ""
+	$Panel2.text = ""
 	draw_elements(left_elements,$Panel1)
 	draw_elements(right_elements,$Panel2)
 	

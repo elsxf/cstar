@@ -30,8 +30,8 @@ func draw_contents(Map:TileMap, coord:Vector2i):
 		#erase feature layer if no feature
 		Map.set_cell(DEF.Layer_Names.Features,coord,-1)
 	if i_items.size()>0:#if items, display first
-		var source = DEF.sDefs[self.i_items[0].shape][&"source"]
-		var AtlasCoord = Vector2i(DEF.sDefs[self.i_items[0].shape][&"A_coord_x"],DEF.sDefs[self.i_items[0].shape][&"A_coord_y"])
+		var source = DEF.getProperty(DEF.sDefs,self.i_items[0].shape,&"source")
+		var AtlasCoord = Vector2i(DEF.getProperty(DEF.sDefs,self.i_items[0].shape,&"A_coord_x"),DEF.getProperty(DEF.sDefs,self.i_items[0].shape,&"A_coord_y"))
 		Map.set_cell(DEF.Layer_Names.Items,coord,source,AtlasCoord)
 	else:#no items, erase item layer 
 		Map.set_cell(DEF.Layer_Names.Items,coord,-1)

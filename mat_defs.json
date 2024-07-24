@@ -1,41 +1,53 @@
 {
 	"Flags":{
-		
+		"isCloth":1,
+		"isShapeable":2,
 	},
-	"default_material":{
+	"default":{
 		"color":"#444444",
-		"density":10,
-		"max_edge":0,
-		"toughness":1
+		"density":1,
+		"toughness":0,
+		"strength":0,
+		"hardness":0,
 	},
 	"Star":{
 		"color":"#FFFFFF",
 		"density":10000,
-		"max_edge":1.2,
-		"toughness":300.
+		"toughness":100,
+		"strength":500,
+		"hardness":20,
+		"flags":["isShapeable"],
 		},
 	"Wood":{
 		"color":"#AAAF00",
-		"density":5,
-		"max_edge":0.4,
+		"density":0.5,
 		"toughness":8,
+		"strength":2,
+		"hardness":2,
+		"flags":["isShapeable"],
 		},
 	"Stone":{
 		"color":"#EE4400",
-		"density":20,
-		"max_edge":0,
-		"toughness":4,
+		"density":4,
+		"toughness":2,
+		"strength":20,
+		"hardness":5,
 		},
 	"Metal":{
-		"color":"#b6bebf",
-		"density":30,
-		"max_edge":0.8,
-		"toughness":10,
-		},	
+		"color":"LIGHT_STEEL_BLUE",
+		"density":8,
+		"toughness":5,
+		"strength":40,
+		"hardness":9,
+		"flags":["isShapeable"],
+		},
 	"Cloth":{
 		"color":"GAINSBORO",
-		"density":3,
+		"density":0.3,
 		"Max_edge":0,
 		"toughness":16,
+		"strength":1,
+		"hardness":1,
+		"flags":["isCloth"],
 	},
 }

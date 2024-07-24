@@ -46,6 +46,7 @@
 		"A_coord_x":1,"A_coord_y":1,
 		"m_cost":-1,
 		"v_cost":-1,
+		"material":"Stone",
 		"destroy_f":"Rubble",
 		"destroy_t":"Cave_Floor",
 	},
@@ -62,6 +63,7 @@
 		"A_coord_x":0,"A_coord_y":0,
 		"m_cost":1,
 		"v_cost":4,
+		"material":"Wood",
 		"harvest":["Wood Log"],
 	},
 	"UpStair":{
@@ -69,22 +71,23 @@
 		"A_coord_x":0,"A_coord_y":0,
 		"m_cost":1,
 		"v_cost":0,
+		"material":"Stone",
 		"harvest":["Stone Mound"],
-		"construct":{"Stone Mound":2},
 	},
 	"DownStair":{
 		"source":13,
 		"A_coord_x":0,"A_coord_y":0,
 		"m_cost":1,
 		"v_cost":0,
+		"material":"Stone",
 		"harvest":["Stone Mound"],
-		"construct":{"Stone Mound":2},
 	},
 	"Rubble":{
 		"source":25,
 		"A_coord_x":0,"A_coord_y":0,
 		"m_cost":5,
 		"v_cost":1,
+		"material":"Stone",
 		"harvest":["Stone Mound"],
 	},
 	"Wooden Bridge":{
@@ -92,7 +95,7 @@
 		"A_coord_x":0,"A_coord_y":0,
 		"m_cost":1,
 		"v_cost":1,
+		"material":"Wood",
 		"harvest":["Wood Log"],
-		"construct":{"Wood Log":3},
 	}
 }

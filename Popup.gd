@@ -28,9 +28,10 @@ func popVector(popupText):
 	DEF.changeFocus(DEF.Focus.POPUP_MENU)
 	$PopupTitle.text = popupText
 	var inputstr = await Signal(self,'validInput')
-	var inputAction = DEF.keyBinds[inputstr]
-	if HEX.dir_str.has(inputAction):
-		return HEX.dir_vec[HEX.dir_str[inputAction]]
+	if DEF.keyBinds.has(inputstr):
+		var inputAction = DEF.keyBinds[inputstr]
+		if HEX.dir_str.has(inputAction):
+			return HEX.dir_vec[HEX.dir_str[inputAction]]
 	return null
 	
 func popChoice(popupText:String, choiceList:Array, closeOnChoice:bool = true, onChoiceLambda = null):
@@ -66,6 +67,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			highlight_idx +=1
 		if(event.is_action("ui_up")):
 			highlight_idx -=1
+		if highlight_idx<0:
+			highlight_idx = choices_array.size()-1
+		if highlight_idx > choices_array.size()-1:
+			highlight_idx = 0
 		if(event.is_action("ui_select")):
 			validInput.emit(highlight_idx)
 			#choices_array.pop_at(highlight_idx)

@@ -133,8 +133,7 @@ func _ready():
 	$VP.size = Vector2(h*(1+1.6)/2,h)
 	
 	DEF.playerM = $Player.m
-	Item.new("Wood","Log").add_to_container($Player.m.items,$Player.m)
-	Item.new("Stone","Cube").add_to_container($Player.m.items,$Player.m)
+	Item.new("Wood","Spear").add_to_container($Player.m.items,$Player.m)
 	Item.new("Robe").add_to_container($Player.m.items,$Player.m)
 	GEN.init_random()
 	
@@ -173,6 +172,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			$HUD/menus/GMenu.enter_menu("Inventory")
 		"keybindings":
 			$HUD/menus/GMenu.enter_menu("Keybinds")
+		"craft":
+			$HUD/menus/GMenu.enter_menu("Craft")
+		"construct":
+			$HUD/menus/GMenu.enter_menu("Construct")
 		"zoom":
 			zoomScale *=2
 			if zoomScale>zoomMax:
@@ -203,7 +206,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			next_action = func wait_lambda(_calc):
 					return ACT.wait()
 		"auto":
-			for i in HEX.get_surround($Player.m.curr_c()):
+			for i in HEX.inRange($Player.m.curr_c(), $Player.m.get_max_m_range()):
+				if current_map[i.x][i.y].m_mob==$Player.m:
+					continue
 				if current_map[i.x][i.y].m_mob!=null:
 					if DEF.hasFlag(current_map[i.x][i.y].m_mob.hostile_to, $Player.m.faction):
 						next_action = func attack_p_lambda(calc):
@@ -237,10 +242,21 @@ func _unhandled_input(event: InputEvent) -> void:
 			#next_action = func drop_lambda(calc):
 						#return ACT.drop($Player.m,choice,calc)
 		"wear":
-			var onChoice = func onChoice_lambda(choice):
-				Signals.emit_signal("Player_take_action", func wear_lambda(calc):
-					return ACT.wear($Player.m,choice,calc))
-			$HUD/menus/Popup.popChoice("wear what?", $Player.m.items, false, onChoice)
+			var possible_items = $Player.m.items
+			for i in HEX.inRange($Player.m.curr_c(),1):
+				possible_items.append_array(current_map[i.x][i.y].i_items)
+			var valid_items = []
+			for i in possible_items:
+				if DEF.hasFlag(DEF.getProperty(DEF.sDefs,i.shape,&"flags"), DEF.sDefs[&"Flags"][&"wearable"]):
+					valid_items.append(i)
+			if valid_items.size() == 0:
+				DEF.textBuffer += "[color=brown]Nothing to wear![/color]\n"
+			else:
+				var onChoice = func onChoice_lambda(choice):
+					Signals.emit_signal("Player_take_action", func wear_lambda(calc):
+						valid_items.erase(choice)
+						return ACT.wear($Player.m,choice,calc))
+				$HUD/menus/Popup.popChoice("wear what?",valid_items, false, onChoice)
 		"wield":
 			var onChoice = func onChoice_lambda(choice):
 				Signals.emit_signal("Player_take_action", func wield_lambda(calc):
@@ -255,7 +271,7 @@ func _unhandled_input(event: InputEvent) -> void:
 					validTiles.append(i)
 			match validTiles.size():
 				0:
-					DEF.textBuffer+="[color=brown]nothing to harvest![/color]"
+					DEF.textBuffer+="[color=brown]nothing to harvest![/color]\n"
 				1:
 					var toHarvest = current_map[validTiles[0].x][validTiles[0].y]
 					next_action= func harvest_lambda(calc):

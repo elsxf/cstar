@@ -65,6 +65,11 @@ func set_self(Map:TileMap):
 func change_hp(delta:int):
 	set_hp(self.Hp+delta)	
 	
+func get_max_m_range():
+	if self.wield ==null:
+		return 1
+	return DEF.getProperty(DEF.sDefs,self.wield.shape,&"m_range")
+	
 func set_hp(value:int):
 	self.Hp = min(value,Hp_max)
 	if self.Hp<=0:
@@ -122,7 +127,7 @@ func get_brain():
 				if cansee:
 					target_tile = m.curr_c()
 					break
-	var attack_range = 1
+	var attack_range = get_max_m_range()
 	var target_dist = HEX.oddr_dist(self.curr_c(),target_tile)
 	if target_tile == Vector2i(-1,-1):
 		target_dist = 0

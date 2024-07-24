@@ -1,1 +1,14 @@
-null
+{
+	"UpStair":{
+		"Ingredients":[{"Stone Block":3}],
+		"Time":10000,
+	},
+	"DownStair":{
+		"Ingredients":[{"Stone Block":3}],
+		"Time":10000,
+	},
+	"Wooden Bridge":{
+		"Ingredients":[{"Wood Log":5}],
+		"Time":5000,
+	},
+}

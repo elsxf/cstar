@@ -49,27 +49,52 @@ static func attack_phys(mob:Mob, target:Vector2i, calc:bool):
 		if targetMob==null:
 			return 0#no longer a target, refund
 		#TODO:hit/miss calc
-		var preArmorDamage = 0
-		var postArmorDamage = 0
+		
+		#damage calculation on hit
+		var blunt = 0
+		var cut = 0
+		var pierce = 0
+		var toHit
 		if(mob.wield==null):
 			var strength = 1
-			var skill = 6
-			preArmorDamage = DEF.rollDice(strength,skill)
+			var skill = 4
+			blunt = strength * skill
+			pierce = strength * (skill/5)
+			cut = strength * (skill/10)
+			toHit = sqrt(skill)
 		else:
-			var blunt = mob.wield.blunt
-			var cut = mob.wield.cut
-			var pierce = mob.wield.pierce
-			preArmorDamage = DEF.rollDice(blunt/3,2) + DEF.rollDice(cut/5,5)
-			postArmorDamage = DEF.rollDice(pierce/10,20)
-		var damageTotal = min(0,preArmorDamage) + postArmorDamage
+			blunt = mob.wield.blunt
+			cut = mob.wield.cut
+			pierce = mob.wield.pierce
+			toHit = mob.wield.to_hit
+		var layerTough = 0
+		var layerHard = 0
+		var layerStrength = 0
+		for c in targetMob.worn:
+			layerTough += DEF.getProperty(DEF.mDefs,c.mat,&"toughness")
+			layerHard += DEF.getProperty(DEF.mDefs,c.mat,&"hardness")
+			layerStrength += DEF.getProperty(DEF.mDefs,c.mat,&"strength")
+		
+		var bluntDamage = 0
+		var pierceDamage = 0
+		var cutDamage = 0
+		
+		if blunt:
+			bluntDamage = DEF.rollDice(DEF.contest(layerTough,blunt+toHit),2)
+		if pierce:
+			pierceDamage = DEF.rollDice(DEF.contest(layerHard,pierce+toHit),6)
+		if cut:
+			cutDamage = DEF.rollDice(DEF.contest(layerStrength,cut+toHit),3)
+			
+		var damageTotal = bluntDamage + pierceDamage + cutDamage
 		targetMob.change_hp(-damageTotal)
 		if(targetMob==DEF.playerM):
-			DEF.textBuffer+="[color=red]"
+			DEF.textBuffer+="[color=dark_red]"
 		elif(mob==DEF.playerM):
-			DEF.textBuffer+="[color=green]"
+			DEF.textBuffer+="[color=Forest_green]"
 		else:
-			DEF.textBuffer+="[color=yellow]"
-		DEF.textBuffer+=(str(mob)+" dealt "+str(preArmorDamage)+"/"+str(postArmorDamage)+" damage to "+str(targetMob)+"[/color]\n")
+			DEF.textBuffer+="[color=BEIGE]"
+		DEF.textBuffer+=(str(mob)+" dealt "+str(bluntDamage)+"/"+str(cutDamage)+"/"+str(pierceDamage)+"damage to "+str(targetMob)+"[/color]\n")
 		next_hit_spark = targetMob.curr_c()
 	return 25
 
@@ -87,6 +112,8 @@ static func drop(mob:Mob,toDrop:Item,calc:bool):
 	return 10
 
 static func wear(mob:Mob,toWear:Item,calc:bool):
+	if not DEF.hasFlag(DEF.getProperty(DEF.sDefs,toWear.shape,&"flags"),DEF.sDefs[&"Flags"][&"wearable"]):
+		return 0
 	if not calc:
 		toWear.free_from_container()
 		toWear.add_to_container(mob.worn,mob)

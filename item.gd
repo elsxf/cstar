@@ -9,6 +9,8 @@ var container_array : Array
 var shape : StringName
 var mat : StringName
 
+var weight : float
+
 var to_hit : int = 0
 var blunt : int = 0
 var cut : int = 0
@@ -33,20 +35,17 @@ func _init(materialName:String,shapeName:String=""):
 	
 		
 	#tohit calculation
-	if DEF.sDefs[self.shape].has(&"to_hit"):
-		self.to_hit = DEF.sDefs[self.shape][&"to_hit"]
-	else:
-		self.to_hit = DEF.sDefs[&"default_shape"][&"to_hit"]
+	self.to_hit = DEF.getProperty(DEF.sDefs,self.shape,&"to_hit")
 	
 	#damage values calcualtion
-	self.blunt = DEF.mDefs[self.mat][&"density"]
-	var edge = 0
-	if DEF.hasFlag(DEF.sDefs[self.shape][&"flags"], DEF.sDefs[&"Flags"][&"hasEdge"]):
-		edge = DEF.mDefs[self.mat][&"max_edge"]
-	self.cut = DEF.mDefs[self.mat][&"density"] * edge
-	self.blunt -= self.cut
-	if DEF.hasFlag(DEF.sDefs[self.shape][&"flags"], DEF.sDefs[&"Flags"][&"hasPoint"]):
-		self.pierce = DEF.mDefs[self.mat][&"density"] * edge
+	self.weight = DEF.getProperty(DEF.mDefs,self.mat,&"density") * 2#DEF.getProperty(DEF.sDefs,self.shape,&"m_count")
+	self.blunt = weight
+	var edge = DEF.getProperty(DEF.mDefs,self.mat,&"hardness")/DEF.getProperty(DEF.mDefs,self.mat,&"toughness")
+	if DEF.hasFlag(DEF.getProperty(DEF.sDefs,self.shape,&"flags"), DEF.sDefs[&"Flags"][&"hasEdge"]):
+		self.cut = min(self.blunt,max(1,weight * edge))
+		self.blunt -= self.cut
+	if DEF.hasFlag(DEF.getProperty(DEF.sDefs,self.shape,&"flags"), DEF.sDefs[&"Flags"][&"hasPoint"]):
+		self.pierce = min(self.blunt,max(1,weight * edge/2))
 		self.blunt -= self.pierce
 	self.blunt = max(self.blunt,0)
 
@@ -66,7 +65,7 @@ func free_from_container():
 	self.container = null
 
 func _to_string():
-	return "[color="+str(DEF.mDefs[self.mat][&"color"])+"]"+self.name+"[/color]"
+	return str(weight)+"# [color="+str(DEF.getProperty(DEF.mDefs,self.mat,&"color"))+"]"+self.name+"[/color]"
 
 func _to_string_verbose():
 	var verboseString = _to_string()+"\nto hit:"+str(self.to_hit)
