@@ -13,7 +13,7 @@ static func value_to_terrain(value:float)->int:
 	var t_value = clamp(int((wl_value+1) * (terrainRange)/2),0,terrainRange-2)
 	return t_value
 
-static func gen_overworld(chunk_coord: Vector2i):
+static func gen_overworld(_chunk_coord: Vector2i):
 	#var stair_down = DEF.feature_t_dat[DEF.feature_tile_names.sDown][DEF.T_data_cols.Scource]
 	#chunk.clear()
 	var chunk = []

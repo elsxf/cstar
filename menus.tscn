@@ -1,14 +1,22 @@
-[gd_scene load_steps=7 format=3 uid="uid://bkt3oclpsb502"]
+[gd_scene load_steps=11 format=3 uid="uid://bkt3oclpsb502"]
 
+[ext_resource type="Script" path="res://menus.gd" id="1_e4eox"]
 [ext_resource type="FontFile" uid="uid://cylhjxuw36osc" path="res://fonts/FairfaxHaxHD.ttf" id="1_wmoxl"]
 [ext_resource type="StyleBox" uid="uid://bhmh15o8ptm68" path="res://styles/menu_panel.tres" id="2_6gd4m"]
 [ext_resource type="Script" path="res://MenuBack.gd" id="3_aybue"]
 [ext_resource type="StyleBox" uid="uid://bjynygok08g8b" path="res://styles/menu_outline.tres" id="5_6s4cg"]
 [ext_resource type="Script" path="res://Popup.gd" id="5_shgk7"]
+[ext_resource type="Shader" path="res://highilght.gdshader" id="6_yx5sm"]
 
 [sub_resource type="Theme" id="Theme_jfvu3"]
 default_font = ExtResource("1_wmoxl")
 /styles/box = ExtResource("2_6gd4m")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_27u6s"]
+shader = ExtResource("6_yx5sm")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_41117"]
+shader = ExtResource("6_yx5sm")
 
 [node name="menus" type="Control"]
 layout_mode = 3
@@ -20,6 +28,7 @@ anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 4
+script = ExtResource("1_e4eox")
 
 [node name="GMenu" type="Panel" parent="."]
 unique_name_in_owner = true
@@ -39,9 +48,17 @@ theme = SubResource("Theme_jfvu3")
 theme_override_styles/panel = ExtResource("2_6gd4m")
 script = ExtResource("3_aybue")
 
+[node name="Highlight" type="ColorRect" parent="GMenu"]
+z_as_relative = false
+material = SubResource("ShaderMaterial_27u6s")
+layout_mode = 0
+offset_left = 237.0
+offset_top = 54.0
+offset_right = 745.0
+offset_bottom = 86.0
+color = Color(0.415686, 0, 0.47451, 1)
+
 [node name="Panel1" type="RichTextLabel" parent="GMenu"]
-z_index = 1
-clip_contents = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -63,17 +80,7 @@ scroll_active = false
 autowrap_mode = 0
 selection_enabled = true
 
-[node name="Highlight" type="ColorRect" parent="GMenu/Panel1"]
-z_as_relative = false
-layout_mode = 2
-offset_left = 356.0
-offset_top = 103.0
-offset_right = 864.0
-offset_bottom = 135.0
-color = Color(0, 0, 1, 1)
-
 [node name="Panel2" type="RichTextLabel" parent="GMenu"]
-z_index = 1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -89,7 +96,7 @@ theme_override_font_sizes/normal_font_size = 32
 theme_override_styles/focus = ExtResource("5_6s4cg")
 theme_override_styles/normal = ExtResource("5_6s4cg")
 bbcode_enabled = true
-text = "lambdamode"
+text = "panel 2"
 scroll_active = false
 autowrap_mode = 0
 
@@ -112,10 +119,10 @@ tab_4/title = "Construct"
 [node name="Popup" type="GridContainer" parent="."]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = -102.0
-offset_top = -412.0
-offset_right = 114.0
-offset_bottom = -332.0
+offset_left = -109.0
+offset_top = -518.0
+offset_right = 131.0
+offset_bottom = -346.0
 theme_override_constants/h_separation = 0
 theme_override_constants/v_separation = -2
 script = ExtResource("5_shgk7")
@@ -131,24 +138,40 @@ fit_content = true
 autowrap_mode = 0
 
 [node name="PopupText" type="RichTextLabel" parent="Popup"]
-z_index = 1
 layout_mode = 2
 theme_override_fonts/normal_font = ExtResource("1_wmoxl")
 theme_override_font_sizes/normal_font_size = 32
-theme_override_styles/normal = ExtResource("5_6s4cg")
+theme_override_styles/normal = ExtResource("2_6gd4m")
 bbcode_enabled = true
 text = "I am a popup!
 more text
-options even!"
+options even!
+down here!
+"
 fit_content = true
 autowrap_mode = 0
 metadata/_edit_group_ = true
 
-[node name="Highlight" type="ColorRect" parent="Popup/PopupText"]
-z_as_relative = false
-layout_mode = 0
-offset_right = 508.0
-offset_bottom = 32.0
-color = Color(0, 0, 1, 1)
+[node name="BackBufferCopy" type="BackBufferCopy" parent="Popup/PopupText"]
+copy_mode = 2
 
+[node name="Highlight" type="ColorRect" parent="Popup/PopupText/BackBufferCopy"]
+material = SubResource("ShaderMaterial_41117")
+offset_top = 65.0
+offset_right = 580.0
+offset_bottom = 97.0
+color = Color(1, 0.32549, 1, 1)
+
+[node name="Focus" type="Label" parent="."]
+layout_mode = 0
+offset_left = -960.0
+offset_top = -540.0
+offset_right = -576.0
+offset_bottom = -412.0
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = ExtResource("2_6gd4m")
+text = "Focus:
+PrevFocus:"
+
+[connection signal="visibility_changed" from="Popup" to="Popup" method="_on_visibility_changed"]
 [connection signal="visibility_changed" from="Popup/PopupText" to="Popup/PopupText" method="_on_visibility_changed"]

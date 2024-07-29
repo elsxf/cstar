@@ -60,9 +60,11 @@ static func process_json():
 	#|**************************************|
 	# resolves flags into ints, go from human readable string arrays to bitwize ints
 	#TODO:see if prefab weapon/armor values is a good idea
-	
-	for dict in [mDefs,sDefs,mob_dict]:
+	var excludes = [&"Surface_order",&"Under_order", &"Feature_order"]
+	for dict in [mDefs,sDefs,mob_dict,terrain_dict]:
 		for entry in dict:
+			if entry in excludes:
+				continue
 			var flagsToInt = 0
 			if dict[entry].has(&"flags"):
 				for flag in dict[entry][&"flags"]:
@@ -108,6 +110,26 @@ static func prevFocus():
 	
 static func hasFlag(has:int,flags:int) -> bool:
 	return (has&flags)
+
+static func EntryHasFlag(dict:Dictionary,item:StringName,flag:StringName)->bool:
+	return hasFlag(getProperty(dict,item,&"flags"),dict[&"Flags"][flag])
+
+static func flagtoString(flag:int, dict:Dictionary) ->Array:
+	var result = []
+	for i in dict["Flags"]:
+		if hasFlag(flag,dict["Flags"][i]):
+			result.append(StringName(i))
+	return result
+	
+static func dispKg(weight:int):
+	if weight < 1000:
+		return str(weight)+ "g"
+	return str(float(weight)/1000)+"Kg"
+	
+static func dispLiter(volume:int):
+	if volume < 1000:
+		return str(volume)+ "mL"
+	return str(float(volume)/1000)+"L"
 	
 static func getProperty(dict:Dictionary,item:StringName,property:StringName):
 	if dict[item].has(property):
@@ -155,7 +177,7 @@ static func listStr(itemList:Array, recurse:int = 0)->String:
 			for num in recurse:
 				result+="\t"
 			result+=str(i)+"\n"
-	return result
+	return result.left(result.length()-1)
 	
 static func lambdaStr(itemList:Array, ListLambda)->String:
 	var result = ""
@@ -166,8 +188,8 @@ static func lambdaStr(itemList:Array, ListLambda)->String:
 static func isInChunk(coord:Vector2i) -> bool:
 	return not (coord.x>=chunk_size or coord.y>=chunk_size or coord.x<0 or coord.y<0)
 	
-static func evtMatch(event:InputEvent,char:String):
-	return char(event.unicode)==char
+static func evtMatch(event:InputEvent,character:String):
+	return char(event.unicode)==character
 
 static func getEventAction(event:InputEvent):
 	if event is InputEventKey:

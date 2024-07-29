@@ -135,6 +135,8 @@ func _ready():
 	DEF.playerM = $Player.m
 	Item.new("Wood","Spear").add_to_container($Player.m.items,$Player.m)
 	Item.new("Robe").add_to_container($Player.m.items,$Player.m)
+	Item.new("Stone","Mound").add_to_container($Player.m.items,$Player.m)
+	Item.new("Wood","Log").add_to_container($Player.m.items,$Player.m)
 	GEN.init_random()
 	
 	$Map.clear()
@@ -150,12 +152,14 @@ func _ready():
 	offset_map()
 
 	Signals.Player_take_action.connect(_on_player_take_action)
+	Signals.Player_action_taken.connect(_on_Player_action_taken)
+	
+	print(CRAFT.get_craftable_list())
 	pass # Replace with function body.
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-@warning_ignore("unused_parameter")
-func _process(delta):
+func _process(_delta):
 	pass
 	
 func _unhandled_input(event: InputEvent) -> void:
@@ -205,6 +209,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		"Center":
 			next_action = func wait_lambda(_calc):
 					return ACT.wait()
+		"apply":
+			var onChoice = func onChoice_lambda(choice):
+				Signals.emit_signal("Player_take_action", func apply_lambda(calc):
+					return ACT.apply($Player.m,choice,calc))
+			$HUD/menus/Popup.popChoice("Apply what?", $Player.m.get_access_items(), true, onChoice)
+			pass
 		"auto":
 			for i in HEX.inRange($Player.m.curr_c(), $Player.m.get_max_m_range()):
 				if current_map[i.x][i.y].m_mob==$Player.m:
@@ -242,9 +252,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			#next_action = func drop_lambda(calc):
 						#return ACT.drop($Player.m,choice,calc)
 		"wear":
-			var possible_items = $Player.m.items
-			for i in HEX.inRange($Player.m.curr_c(),1):
-				possible_items.append_array(current_map[i.x][i.y].i_items)
+			var possible_items = $Player.m.get_access_items()
 			var valid_items = []
 			for i in possible_items:
 				if DEF.hasFlag(DEF.getProperty(DEF.sDefs,i.shape,&"flags"), DEF.sDefs[&"Flags"][&"wearable"]):
@@ -256,12 +264,12 @@ func _unhandled_input(event: InputEvent) -> void:
 					Signals.emit_signal("Player_take_action", func wear_lambda(calc):
 						valid_items.erase(choice)
 						return ACT.wear($Player.m,choice,calc))
-				$HUD/menus/Popup.popChoice("wear what?",valid_items, false, onChoice)
+				$HUD/menus/Popup.popChoice("wear what?",valid_items, true, onChoice)
 		"wield":
 			var onChoice = func onChoice_lambda(choice):
 				Signals.emit_signal("Player_take_action", func wield_lambda(calc):
 					return ACT.wield($Player.m,choice,calc))
-			$HUD/menus/Popup.popChoice("wield what?", $Player.m.items, false, onChoice)
+			$HUD/menus/Popup.popChoice("wield what?", $Player.m.get_access_items(), true, onChoice)
 		"Harvest":
 			var validTiles = []
 			for i in HEX.inRange($Player.m.curr_c(),1):
@@ -290,7 +298,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				var target =HEX.add_2_3($Player.m.curr_c(),choice)
 				next_action = func onChoice_lambda(calc):
 					var result = ACT.smash(current_map[target.x][target.y],calc)
-					current_map[choice.x][choice.y].set_self($Map,choice)
+					current_map[target.x][target.y].set_self($Map,target)
 					return result
 		#"construct":
 			#var onChoice = func onChoice_lambda(choice_feat,choice_tile,calc):
@@ -298,6 +306,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			#$HUD/menus.choiceOf("Constuct",)
 			#pass
 
+	$Map.clear_layer(DEF.Layer_Names.Highlight)
 	if(horiz_vector!=null):
 		var target_tile =HEX.add_2_3($Player.m.curr_c(),horiz_vector)
 		if(DEF.isInChunk(target_tile)):
@@ -419,3 +428,7 @@ func _on_player_take_action(Action_Lambda) -> void:
 	do_LOS()
 	
 	Signals.emit_signal("Player_action_taken")
+	
+func _on_Player_action_taken():
+	if DEF.playerM.current_activity!=null:
+		Signals.emit_signal("Player_take_action", DEF.playerM.current_activity)

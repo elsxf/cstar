@@ -13,8 +13,11 @@ var left_elements = {}
 var left_array = []
 var right_elements = {}
 var right_array = []
+
+var panel_line_count: int = -1
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	panel_line_count = $Panel1.size.y/32
 	pass # Replace with function body.
 
 func enter_menu(menuName:String):
@@ -26,6 +29,7 @@ func enter_menu(menuName:String):
 		if $Pages.get_tab_title(i) == menuName:
 			$Pages.current_tab = i
 			break
+	draw_panel()
 	
 			
 func close_menu():
@@ -68,21 +72,13 @@ func linesFromTop(idx:int,elements:Dictionary):
 	var lines = idx
 	var offset:int = 0
 	for v in elements.values():
-		offset+=1
+		offset+= 0 if elements.find_key(v).is_empty() else 1
 		idx -= (v.size() if typeof(v)==TYPE_ARRAY else 1)
 		if(idx<0):
 			break;
 	return lines+offset
 
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	if not visible:
-		return
-	if DEF.gameState[&"focus"]!=DEF.Focus.GAME_MENU:
-		return
-	
-	#TODO: only update when called, not every frame
+func draw_panel():
 	left_elements.clear()
 	right_elements.clear()
 	match $Pages.get_tab_title($Pages.current_tab):
@@ -90,9 +86,10 @@ func _process(delta: float) -> void:
 			left_elements["Items Carried"] = DEF.playerM.items
 			left_array = arrayFromDict(left_elements)
 			if(DEF.playerM.wield!=null):
-				right_elements["Wielded"] = DEF.playerM.wield
+				right_elements[""] = DEF.playerM.wield
 			right_elements["Items Worn"] = DEF.playerM.worn
 			right_array = arrayFromDict(right_elements)
+			Panel2_enabled = true
 		"Keybinds":
 			left_elements["Actions"] = DEF.actionBinds.keys()
 			left_array = DEF.actionBinds.keys()
@@ -100,7 +97,10 @@ func _process(delta: float) -> void:
 			right_array = DEF.actionBinds.values()
 			Panel2_enabled = false
 			active_panel = LEFT
+			right_idx=left_idx
+			#$Panel2.get_v_scroll_bar().value=$Panel1.get_v_scroll_bar().value
 		"Character":
+			Panel2_enabled = true
 			pass
 		"Construct":
 			left_elements["Constuctions"] = DEF.construct_dict.keys()
@@ -110,26 +110,10 @@ func _process(delta: float) -> void:
 			Panel2_enabled = false
 			active_panel = LEFT
 		"Craft":
-			left_elements["Crafts"] = DEF.sDefs.keys().slice(2)
-			left_array = DEF.sDefs.keys()
-			#build recipie
-			var recipie = {}
-			var item = left_array[left_idx]
-			var itemFlags = DEF.getProperty(DEF.sDefs,item,&"flags")
-			var reqFlag = 0
-			reqFlag |= int(DEF.mDefs[&"Flags"][&"isShapeable"]) if DEF.hasFlag(itemFlags, DEF.sDefs[&"Flags"][&"needsShapeable"]) else 0
-			reqFlag |= int(DEF.mDefs[&"Flags"][&"isCloth"]) if DEF.hasFlag(itemFlags, DEF.sDefs[&"Flags"][&"needsClothLike"]) else 0
-			recipie["Count"] = str(DEF.getProperty(DEF.sDefs,item,&"m_count")) + "# of:"
-			#TODO: get surrounding items too
-			var player_mats = []
-			for i in DEF.playerM.items:
-				if reqFlag & DEF.mDefs[i.mat][&"flags"] != reqFlag:
-						continue;
-				if not player_mats.has(i.mat):
-					player_mats.append(i.mat)
-					
-			recipie["Materials"] = player_mats
-			right_elements["Needs"] = recipie
+			left_elements["Crafts"] = CRAFT.get_craftable_list()
+			left_array = left_elements["Crafts"]
+			#display selected recipie recipie
+			right_elements["Needs"] = CRAFT.get_recipie(left_array[left_idx],DEF.playerM)
 			right_array = []
 			Panel2_enabled = false
 			active_panel = LEFT
@@ -137,13 +121,23 @@ func _process(delta: float) -> void:
 	$Panel2.text = ""
 	draw_elements(left_elements,$Panel1)
 	draw_elements(right_elements,$Panel2)
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(_delta: float) -> void:
+	if not visible:
+		return
+	if DEF.gameState[&"focus"]!=DEF.Focus.GAME_MENU:
+		return
+	
+	#TODO: only update when called, not every frame
+	
 	
 	if active_panel==LEFT:
-		$Panel1/Highlight.position.y = linesFromTop(left_idx,left_elements)*32
-		$Panel1/Highlight.position.x = 0
+		$Highlight.position.y = $Panel1.position.y + linesFromTop(left_idx,left_elements)*32 - $Panel1.get_v_scroll_bar().value
+		$Highlight.position.x = $Panel1.position.x
 	else:
-		$Panel1/Highlight.position.y = linesFromTop(right_idx,right_elements)*32
-		$Panel1/Highlight.position.x = $Panel1/Highlight.size.x
+		$Highlight.position.y = $Panel1.position.y + linesFromTop(right_idx,right_elements)*32 - $Panel2.get_v_scroll_bar().value
+		$Highlight.position.x = $Panel1.size.x + $Panel1.position.x
 	pass
 	
 
@@ -151,27 +145,19 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if DEF.gameState[&"focus"]!=DEF.Focus.GAME_MENU or event.is_released():
 		return
 	get_viewport().set_input_as_handled()
+	draw_panel()
 	if(event.is_action("ui_down")):
 		if active_panel==LEFT:
 			left_idx +=1
 		else:
 			right_idx+=1
-		#if highlight_idx.y>=19:
-			#highlight_idx.y -=1
-			#$Panel1.scroll_to_line($Panel1.get_v_scroll_bar().value/32 + 1)
 		pass
 	if(event.is_action("ui_up")):
 		if active_panel==LEFT:
 			left_idx -=1
 		else:
 			right_idx-=1
-		#if highlight_idx.y<0:
-			#if $Panel1.get_v_scroll_bar().value/32 > 0:
-				#highlight_idx.y +=1
-				#$Panel1.scroll_to_line($Panel1.get_v_scroll_bar().value/32 - 1)
-			#else:
-				#highlight_idx.y = 18
-				#$Panel1.scroll_to_line($Panel1.get_v_scroll_bar().max_value)
+			
 		pass
 	if(left_idx<0):
 		left_idx = left_array.size()-1
@@ -181,19 +167,29 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		left_idx = 0
 	if(right_idx>=right_array.size()):
 		right_idx = 0
+
+		
 	if(event.is_action("ui_left") or event.is_action("ui_right")):
 		active_panel = 1^active_panel
+		if(right_array.size()==0):
+			active_panel = LEFT
+
+		
 	match DEF.getEventAction(event):
 		"auto":
 			if $Pages.current_tab==$Pages.tab_count-1:
 				$Pages.current_tab = 0
 			else:
 				$Pages.current_tab+=1
+			left_idx=0
+			right_idx=0
 		"b_auto":
 			if $Pages.current_tab==0:
 				$Pages.current_tab = $Pages.tab_count - 1
 			else:
 				$Pages.current_tab-=1
+			left_idx=0
+			right_idx=0
 		"OpenInventory":
 			if $Pages.get_tab_title($Pages.current_tab)=="Inventory":
 				close_menu()
@@ -204,8 +200,20 @@ func _unhandled_key_input(event: InputEvent) -> void:
 				close_menu()
 			else:
 				enter_menu("Keybinds")
+		"craft":
+			if $Pages.get_tab_title($Pages.current_tab)=="Craft":
+				close_menu()
+			else:
+				enter_menu("Craft")
+		"construct":
+			if $Pages.get_tab_title($Pages.current_tab)=="Construct":
+				close_menu()
+			else:
+				enter_menu("Construct")
+	draw_panel()
+	$Panel1.scroll_to_line(left_idx-1)
+	$Panel2.scroll_to_line(right_idx-1)
 	if(event.is_action("ui_select")):
-		var selected = 0#highlight_idx.y + $Panel1.get_v_scroll_bar().value/32
 		match $Pages.get_tab_title($Pages.current_tab):
 			"Inventory":
 				if active_panel==LEFT:
@@ -215,7 +223,68 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			"Keybinds":
 				DEF.actionBinds[left_array[left_idx]] = await %Popup.popInput("Enter a new key:")
 				DEF.keyBinds = DEF.reverseDict(DEF.actionBinds)
+			"Craft":
+				var recepie = null
+				var chosen_shape = left_array[left_idx]
+				if right_elements["Needs"].has("Materials"):
+					#if made from raw, get material
+					var chosen_material
+					#TODO:filter out materials of which there arn't enough of
+					var material_choices = right_elements["Needs"]["Materials"]
+					match material_choices.size():
+						0:
+							await %Popup.popInput("Nothing to make it from!")
+							return
+						1:
+							chosen_material = material_choices[0]
+						_:
+							chosen_material = await %Popup.popChoice("Make From:", material_choices)
+					if chosen_material == null:
+						return
+					#get all items of given material
+					var valid_items = []
+					for i in DEF.playerM.get_access_items():
+						if i.mat == chosen_material and i.subItems.is_empty():
+							valid_items.append(i)
+					var volume_needed = DEF.getProperty(DEF.sDefs,chosen_shape,"m_count")
+					var volume_has = 0
+					var reagent_choices = []
+					while(volume_has<volume_needed):
+						var chosen_reagent =  await %Popup.popChoice("need "+ DEF.dispLiter(volume_needed-volume_has) + " more of", valid_items)
+						if chosen_reagent==null:
+							return
+						volume_has += chosen_reagent.volume
+						reagent_choices.append(chosen_reagent)
+						valid_items.erase(chosen_reagent)
+					var result = Item.new(chosen_material,chosen_shape)
+					recepie = Recipie.new(result,reagent_choices,volume_has/volume_needed)
+				elif right_elements["Needs"].has("Items"):#subitem craft
+					var reagent_choices = []
+					for shape in right_elements["Needs"]["Items"]:
+						#get all items of shape
+						var valid_items = []
+						for item in DEF.playerM.get_access_items():
+							if item.shape == shape:
+								valid_items.append(item)
+						if valid_items.size()==0:
+							await %Popup.popInput("Missing Ingredients!")
+							return
+						var chosen_reagent =  await %Popup.popChoice("need "+str(shape)+":", valid_items)
+						if chosen_reagent==null:
+							return
+						reagent_choices.append(chosen_reagent)
+					var result = Item.new(reagent_choices,chosen_shape)
+					#print(result._to_string_verbose())
+					recepie = Recipie.new(result,reagent_choices)
+				if recepie != null:
+					recepie.add_to_container(DEF.playerM.items,DEF.playerM)
+				Signals.emit_signal("Player_take_action", func craft_lambda(calc):
+					return ACT.craft(DEF.playerM,recepie,calc))
+			"Construct":
+				var chosenItems
+				
 		#TODO: the thing
 		pass
+	draw_panel()
 	if(event.is_action("ui_cancel")):
 		close_menu()

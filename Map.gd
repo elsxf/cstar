@@ -14,7 +14,7 @@ func _tile_data_runtime_update(layer: int, coords: Vector2i, tile_data: TileData
 			var tileItem = currTile.i_items[0]
 			tile_data.modulate = Color(DEF.getProperty(DEF.mDefs,tileItem.mat,&"color"))
 	
-func _use_tile_data_runtime_update(layer: int, coords: Vector2i):
+func _use_tile_data_runtime_update(layer: int, _coords: Vector2i):
 	if layer == DEF.Layer_Names.Mobs or layer == DEF.Layer_Names.Items:
 		return true
 	return false

@@ -30,7 +30,8 @@ var factionStr : String
 @export var tile_coord:Vector2
 @export var tile_alt = 0
 
-var next_action
+var next_action = null
+var current_activity = null
 
 func _init(mob_name:String):
 	self.name = mob_name
@@ -110,7 +111,20 @@ func get_tu_cost() -> int:
 		return next_action.call(true)
 	return -1
 
+func get_access_items(dist:int = 1):
+	var valid_items = []
+	valid_items.append_array(items)
+	valid_items.append_array(worn)
+	if wield!=null:
+		valid_items.append(wield)
+	for i in HEX.inRange(DEF.playerM.curr_c(),dist):
+		valid_items.append_array(map[i.x][i.y].i_items)
+	return valid_items
+
 func get_brain():
+	if current_activity != null:
+		next_action = current_activity
+		return 
 	for m in self.list_of_mobs:
 		if m==self:
 			continue

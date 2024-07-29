@@ -4,6 +4,7 @@ class_name Tile
 @export var dataSet : Array
 @export var t_name : StringName
 @export var f_name : StringName
+var feature_data
 @export var m_mob : Mob
 @export var i_items : Array
 @export var known : int = DEF.vis_tile_names.Unknown
@@ -39,6 +40,10 @@ func draw_contents(Map:TileMap, coord:Vector2i):
 		m_mob.set_self(Map)
 	
 func get_m_cost():
+	if not f_name.is_empty():
+		if DEF.EntryHasFlag(DEF.terrain_dict,f_name,&"Feature_override"):
+			return DEF.getProperty(DEF.terrain_dict,f_name,&"m_cost")
+		return DEF.terrain_dict[t_name][&"m_cost"] + DEF.getProperty(DEF.terrain_dict,f_name,&"m_cost")
 	return DEF.terrain_dict[t_name][&"m_cost"]
 
 func get_v_cost():
