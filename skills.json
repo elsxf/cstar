@@ -1,0 +1,25 @@
+{
+	"default":{
+		"strength":400,
+		"agility":400,
+		"perception":400,
+		"intelligence":400,
+		
+		"melee":100,
+		"dodge":100,
+		"blunt":0,
+		"cut":0,
+		"pierce":0,
+	},
+	"midGame":{
+		"strength":800,
+		"agility":600,
+		"perception":600,
+		"intelligence":600,
+		"melee":600,
+		"dodge":600,
+		"blunt":400,
+		"cut":400,
+		"pierce":400,
+	},
+}

@@ -36,16 +36,17 @@ func close_menu():
 	self.visible = false
 	DEF.prevFocus()
 
-func draw_elements(elements:Dictionary, panel:RichTextLabel):
+func draw_elements(elements:Dictionary, panel:RichTextLabel, lambda=func foo(bar):return bar):
 	for names in elements.keys():
 		if not names.is_empty():
-			panel.text += "[color=pink][u]"+names+"[/u][/color]\n"
+			panel.text += "[color=pink][u]"+names+"[/u][/color] "
 		if(typeof(elements[names])==TYPE_ARRAY):
-			panel.text += DEF.listStr(elements[names])
+			panel.text += "\n"+DEF.listStr(elements[names])
 		elif(typeof(elements[names])==TYPE_DICTIONARY):
-			draw_elements(elements[names], panel)
+			panel.text += "\n"
+			draw_elements(elements[names], panel,lambda)
 		else:
-			panel.text += str(elements[names])+"\n"
+			panel.text += str(lambda.call(elements[names]))+"\n"
 		
 func arrayFromDict(elements:Dictionary)->Array:
 	var result = []
@@ -81,6 +82,8 @@ func linesFromTop(idx:int,elements:Dictionary):
 func draw_panel():
 	left_elements.clear()
 	right_elements.clear()
+	var left_lambda = func foo(bar):return bar
+	var right_lambda = func foo(bar):return bar
 	match $Pages.get_tab_title($Pages.current_tab):
 		"Inventory":
 			left_elements["Items Carried"] = DEF.playerM.items
@@ -100,7 +103,10 @@ func draw_panel():
 			right_idx=left_idx
 			#$Panel2.get_v_scroll_bar().value=$Panel1.get_v_scroll_bar().value
 		"Character":
-			Panel2_enabled = true
+			left_elements["Attributes"]= DEF.playerM.attributes
+			left_array = left_elements["Attributes"].keys()
+			left_lambda = func toSkill(skill):return DEF.numToSkill(skill,true)
+			Panel2_enabled = false
 			pass
 		"Construct":
 			left_elements["Constuctions"] = DEF.construct_dict.keys()
@@ -119,8 +125,8 @@ func draw_panel():
 			active_panel = LEFT
 	$Panel1.text = ""
 	$Panel2.text = ""
-	draw_elements(left_elements,$Panel1)
-	draw_elements(right_elements,$Panel2)
+	draw_elements(left_elements,$Panel1,left_lambda)
+	draw_elements(right_elements,$Panel2,right_lambda)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(_delta: float) -> void:
@@ -281,8 +287,47 @@ func _unhandled_key_input(event: InputEvent) -> void:
 				Signals.emit_signal("Player_take_action", func craft_lambda(calc):
 					return ACT.craft(DEF.playerM,recepie,calc))
 			"Construct":
-				var chosenItems
-				
+				close_menu()
+				var tile_coords = HEX.add_2_3(DEF.playerM.curr_c(),await %Popup.popVector("construct where?"))
+				var tile_to_place:Tile = DEF.playerM.map[tile_coords.x][tile_coords.y]
+				if not tile_to_place.f_name.is_empty() or tile_to_place.get_m_cost()==-1:
+					await %Popup.popInput("Something is there!")
+					return
+				var reagents = {}
+				for entry in DEF.construct_dict[left_array[left_idx]]["Ingredients"]:
+					var valid_choices = []#items the player has enough of
+					for item in entry.keys():
+						var num_needed = entry[item]
+						if DEF.numOfItem(DEF.playerM.items,item) >= num_needed:
+							valid_choices.append(item)
+					match valid_choices.size():
+						0:
+							await %Popup.popInput("Nothing to make it from")
+							return
+						1:
+							reagents[valid_choices[0]]=entry[valid_choices[0]]
+						_:
+							var item_choice = await %Popup.popChoice("Use Which?", valid_choices)
+							reagents[item_choice]=entry[item_choice]
+				#if player has enough in inventory, remove items
+				for entry in reagents:
+					var num_needed = reagents[entry]
+					for item in DEF.playerM.items:
+						if DEF.isItemByName(item,entry):
+							var count = item.count
+							item.free_from_container(num_needed)
+							num_needed -= count
+							if num_needed<=0:
+								break
+				#place constuction
+				tile_to_place.f_name="Constuction"
+				var into = left_array[left_idx]
+				var time_u = DEF.construct_dict[left_array[left_idx]]["Time"]
+				tile_to_place.feature_data = {"work_total":time_u,"work_left":time_u,"feature_into":into}
+				Signals.Player_take_action.emit(func construct_lambda(calc):
+					return ACT.construct(DEF.playerM,tile_to_place,calc))
+						
+					
 		#TODO: the thing
 		pass
 	draw_panel()

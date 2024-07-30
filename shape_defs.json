@@ -28,6 +28,7 @@
 	},
 	"Blade":{
 		"m_count":300,
+		"flags":["hasEdge"]
 	},
 	"Cube":{
 		"source":19,

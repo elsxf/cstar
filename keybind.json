@@ -22,6 +22,8 @@
 	"Shift+Tab":"b_auto",
 	"z":"zoom",
 	"Z":"b_zoom",
+	"@":"character",
 	"&":"craft",
 	"*":"construct",
+	"#":"number"
 }

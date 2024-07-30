@@ -2,9 +2,11 @@ extends GridContainer
 
 signal validInput(input)
 
-var mode = MODE.INPUT
-var highlight_idx = 0
-var choices_array = []
+var mode:int = MODE.INPUT
+var highlight_idx:int = 0
+var choices_array:Array = []
+var num_choice:int = 0
+var is_entering_number:bool = false
 enum MODE{INPUT,CHOICE,ALERT}
 
 
@@ -52,7 +54,10 @@ func popChoice(popupText:String, choiceList:Array, closeOnChoice:bool = true, on
 		if onChoiceLambda == null:
 			close_popup()
 			return chosen
-		onChoiceLambda.call(chosen)
+		if num_choice==-1 or num_choice==0:
+			onChoiceLambda.call(chosen)
+		else:
+			onChoiceLambda.call(chosen,num_choice)
 		if closeOnChoice:
 			close_popup()
 			break
@@ -77,14 +82,29 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		if(event.is_action("ui_up")):
 			highlight_idx -=1
 			if highlight_idx < 0:
-				highlight_idx = choices_array.size()
+				highlight_idx = choices_array.size()-1
+		#
 		if highlight_idx<0:
 			highlight_idx = choices_array.size()-1
 		if highlight_idx > choices_array.size()-1:
 			highlight_idx = 0
+		#
 		if(event.is_action("ui_select")):
-			validInput.emit(highlight_idx)
+			if choices_array.size()==0:
+				close_popup()
+			else:
+				validInput.emit(highlight_idx)
 			#choices_array.pop_at(highlight_idx)
+		if(is_entering_number):
+			if((DEF.getEventStr(event)).is_valid_int()):
+				num_choice *= 10
+				num_choice += int(DEF.getEventStr(event))
+			else:
+				is_entering_number = false
+				num_choice = -1
+		if(DEF.getEventAction(event)=="number"):
+			is_entering_number = true
+			num_choice = 0
 
 			
 # Called when the node enters the scene tree for the first time.

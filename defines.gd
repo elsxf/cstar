@@ -16,6 +16,8 @@ static var tile_scale = Vector2i(2,2)
 
 static var json_was_processed : bool = false
 
+static var world_time = 0
+
 static var playerM : Mob
 
 static var debug_esp = false
@@ -41,6 +43,7 @@ enum Focus{
 static var keyBinds = JSON.parse_string(FileAccess.get_file_as_string("keybind.json"))
 static var actionBinds = reverseDict(keyBinds)
 static var mob_dict = JSON.parse_string(FileAccess.get_file_as_string("mobs.json"))
+static var skill_dict = JSON.parse_string(FileAccess.get_file_as_string("skills.json"))
 static var faction_dict = JSON.parse_string(FileAccess.get_file_as_string("factions.json"))
 static var item_dict = JSON.parse_string(FileAccess.get_file_as_string("items.json"))
 static var terrain_dict = JSON.parse_string(FileAccess.get_file_as_string("terrain.json"))
@@ -121,6 +124,26 @@ static func flagtoString(flag:int, dict:Dictionary) ->Array:
 			result.append(StringName(i))
 	return result
 	
+static func isItemByName(item:Item, item_string:String)->bool:
+	var parsed = item_string.split(" ")
+	var item_mat = null
+	var item_name
+	if parsed.size()==0:
+		item_name=parsed[0]
+	else:
+		item_mat = parsed[0]
+		item_name=parsed[1]
+	if item_name==item.name and (item_mat == null or item_mat==item.mat):
+		return true
+	return false
+	
+static func numOfItem(arr:Array, item:String):
+	var count = 0
+	for i in arr:
+		if isItemByName(i,item):
+			count +=i.count
+	return count
+	
 static func dispKg(weight:int):
 	if weight < 1000:
 		return str(weight)+ "g"
@@ -146,9 +169,23 @@ static func rollDice(num:int, dice:int) -> int:
 		sum+=randi_range(1,dice)
 	return sum
 
+static func numToSkill(num:float, asFloat:bool = false):
+	var result = num/100 ** (1.0/1.2)
+	if asFloat:
+		return snapped(result,.01)
+	return int(result)
+
 static func contest(stat1,stat2)->int:
 	#returns negative if stat1 wins, positive if stat2 wins, 0 if tie
-	return (rollDice(3,6)+stat2)-(rollDice(3,6)+stat1)
+	var stat1roll = rollDice(3,6)
+	var stat2roll = rollDice(3,6)
+	if (stat1roll==18 and stat2roll!=18) or (stat1roll!=3 and stat2roll==3):
+		#stat1 crit
+		return -18 - stat1
+	if (stat2roll==18 and stat1roll!=18) or (stat2roll!=3 and stat1roll==3):
+		#stat2 crit
+		return 18 + stat2
+	return (stat2roll+stat2)-(stat1roll+stat1)
 
 static func toBar(part, total, numchars:int = 2, color:bool = true):
 	var percent:float = float(part)/total

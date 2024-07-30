@@ -1,9 +1,19 @@
 {
+	"default":{
+		"hp":10,
+		"sightRange":3,
+		"wield":"",
+		"wear":[],
+		"speed":50,
+		"skills":"default",
+		"A_coord_x":0,"A_coord_y":0,
+		"color":"#FF0000",
+		"faction":"Neutral",
+		"hostile_to":[],
+	},
 	"Player":{
 		"hp":50,
 		"sightRange":5,
-		"atkDice":2,
-		"atkSides":4,
 		"speed":50,
 		"source":15,
 		"A_coord_x":0,"A_coord_y":0,
@@ -11,13 +21,14 @@
 		"faction":"Player",
 		"hostile_to":[],
 	},
-	"Guy":{
-		"hp":10,
+	"Guard":{
+		"hp":70,
 		"sightRange":4,
 		"wield":"Metal Sword",
 		"wear":["Robe"],
 		"speed":40,
 		"source":15,
+		"skills":"midGame",
 		"A_coord_x":0,"A_coord_y":0,
 		"color":"#FF0000",
 		"faction":"Dungeon",

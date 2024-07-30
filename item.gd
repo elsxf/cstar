@@ -11,6 +11,7 @@ var mat : StringName
 
 var weight : int = 0#in grams
 var volume : int = 0#in mL
+var density : float = 1#in g/mL
 var count : int = 1
 
 var subItems = []
@@ -31,14 +32,16 @@ func _init(materialName,shapeName:String="", num_of:int=1):
 		self.shape = materialName.shape
 		self.mat = materialName.mat
 		self.subItems = materialName.subItems
-		weight = materialName.weight
-		volume = materialName.volume
+		self.weight = materialName.weight
+		self.volume = materialName.volume
+		self.density = materialName.density
 	elif shapeName.is_empty() and materialName is String:#predef item name
 		self.name = materialName
 		self.shape = DEF.item_dict[self.name][&"shape"]
 		self.mat = DEF.item_dict[self.name][&"material"]
-		volume = DEF.getProperty(DEF.sDefs,shape,&"m_count")
-		weight = volume * DEF.getProperty(DEF.mDefs,mat,&"density")
+		self.volume = DEF.getProperty(DEF.sDefs,self.shape,&"m_count")
+		self.density = DEF.getProperty(DEF.mDefs,self.mat,&"density")
+		self.weight = self.density * self.volume
 	elif DEF.getProperty(DEF.sDefs,shapeName,&"m_count") is Array:#multipart item
 		self.shape = shapeName
 		self.name = shapeName
@@ -50,15 +53,17 @@ func _init(materialName,shapeName:String="", num_of:int=1):
 				subItemMat = materialName
 			subItems.append(Item.new(subItemMat,DEF.getProperty(DEF.sDefs,shapeName,&"m_count")[shapes]))
 		for item in subItems:
-			volume += item.volume
-			weight+=item.weight
+			self.volume += item.volume
+			self.weight+=item.weight
 		self.mat = subItems[0].mat
+		self.density = DEF.getProperty(DEF.mDefs,self.mat,&"density")
 	else:#material/shape definition
 		self.name = shapeName
 		self.shape = shapeName
 		self.mat = materialName
-		volume = DEF.getProperty(DEF.sDefs,shape,&"m_count")
-		weight = float(volume) * DEF.getProperty(DEF.mDefs,mat,&"density")
+		self.volume = DEF.getProperty(DEF.sDefs,self.shape,&"m_count")
+		self.density = DEF.getProperty(DEF.mDefs,self.mat,&"density")
+		self.weight = self.density*self.volume
 		
 	#tohit calculation
 	self.to_hit = DEF.getProperty(DEF.sDefs,self.shape,&"to_hit")
@@ -67,15 +72,15 @@ func _init(materialName,shapeName:String="", num_of:int=1):
 	self.blunt = sqrt(weight/1000)
 	var edge = DEF.getProperty(DEF.mDefs,self.mat,&"hardness")/DEF.getProperty(DEF.mDefs,self.mat,&"toughness")
 	if DEF.hasFlag(DEF.getProperty(DEF.sDefs,self.shape,&"flags"), DEF.sDefs[&"Flags"][&"hasEdge"]):
-		self.cut = min(self.blunt,max(1,weight * edge))
+		self.cut = max(1,density * sqrt(edge))
 		self.blunt -= self.cut
 	if DEF.hasFlag(DEF.getProperty(DEF.sDefs,self.shape,&"flags"), DEF.sDefs[&"Flags"][&"hasPoint"]):
-		self.pierce = min(self.blunt,max(1,weight * edge*2))
+		self.pierce = max(1,self.density * sqrt(edge/2))
 		self.blunt -= self.pierce
 	self.blunt = max(self.blunt,0)
 
 func add_to_container(put_array:Array, container_obj, num_to_add:int = -1):
-	if num_to_add == -1 or num_to_add>count:
+	if num_to_add == -1 or num_to_add>=count:
 		put_array.append(self)
 		self.container_array = put_array
 		self.container = container_obj
@@ -89,13 +94,13 @@ func add_to_container(put_array:Array, container_obj, num_to_add:int = -1):
 	
 	
 func free_from_container(num_to_free:int = -1):
-	if num_to_free == -1 or num_to_free>count:
+	if num_to_free == -1 or num_to_free>=count:
 		self.container_array.erase(self)
 		self.container = null
 	else:
 		count -= num_to_free
 		
-func transfer_to_container(to_container, to_container_array, num_to_transfer = -1):
+func transfer_to_container(to_container, to_container_array:Array, num_to_transfer:int = -1):
 	free_from_container(num_to_transfer)
 	add_to_container(to_container_array,to_container,num_to_transfer)
 

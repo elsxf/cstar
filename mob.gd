@@ -14,6 +14,7 @@ var target_tile : Vector2i = Vector2i(-1,-1)
 
 var time_u : int = 0
 var speed : int = 100
+var attributes:Dictionary = {}
 
 var items : Array = []
 var worn : Array = []
@@ -37,27 +38,27 @@ func _init(mob_name:String):
 	self.name = mob_name
 	self.Hp_max = DEF.mob_dict[mob_name]["hp"]
 	self.Hp = self.Hp_max
-	self.sight_range = DEF.mob_dict[mob_name]["sightRange"]
-	if DEF.mob_dict[mob_name].has("wear"):
-		for w in DEF.mob_dict[mob_name]["wear"]:
-			var parsed = w.split(" ")
-			if parsed.size()==1:
-				Item.new(parsed[0]).add_to_container(worn,self)
-			else:
-				Item.new(parsed[0], parsed[1]).add_to_container(worn,self)
-	if DEF.mob_dict[mob_name].has("wield"):
-		var parsed = DEF.mob_dict[mob_name]["wield"].split(" ")
+	self.sight_range = DEF.getProperty(DEF.mob_dict,self.name,&"sightRange")
+	for w in DEF.getProperty(DEF.mob_dict,self.name,&"wear"):
+		var parsed = w.split(" ")
+		if parsed.size()==1:
+			Item.new(parsed[0]).add_to_container(worn,self)
+		else:
+			Item.new(parsed[0], parsed[1]).add_to_container(worn,self)
+	if not DEF.getProperty(DEF.mob_dict,self.name,&"wield").is_empty():
+		var parsed = DEF.getProperty(DEF.mob_dict,self.name,&"wield").split(" ")
 		if parsed.size() == 1:
 			wield = Item.new(parsed[0])
 		else:
 			wield = Item.new(parsed[0],parsed[1])
-	self.speed = DEF.mob_dict[mob_name]["speed"]
-	self.tile_id = DEF.mob_dict[mob_name]["source"]
-	self.tile_coord = Vector2i(DEF.mob_dict[mob_name]["A_coord_x"],DEF.mob_dict[mob_name]["A_coord_y"])
-	self.factionStr = DEF.mob_dict[mob_name]["faction"]
+	self.speed = DEF.getProperty(DEF.mob_dict,self.name,&"speed")
+	self.attributes = DEF.skill_dict[DEF.getProperty(DEF.mob_dict,self.name,&"skills")]
+	self.tile_id = DEF.getProperty(DEF.mob_dict,self.name,&"source")
+	self.tile_coord = Vector2i(DEF.getProperty(DEF.mob_dict,self.name,&"A_coord_x"),DEF.getProperty(DEF.mob_dict,self.name,&"A_coord_y"))
+	self.factionStr = DEF.getProperty(DEF.mob_dict,self.name,&"faction")
 	self.faction = DEF.faction_dict[factionStr]
 	self.hostile_to = 0
-	for i in DEF.mob_dict[mob_name]["hostile_to"]:
+	for i in  DEF.getProperty(DEF.mob_dict,self.name,&"hostile_to"):
 		self.hostile_to = self.hostile_to |  int(DEF.faction_dict[i])
 
 func set_self(Map:TileMap):
@@ -172,7 +173,10 @@ func die():
 	#drop loot
 	for i in items:
 		i.add_to_container(self.map[curr_c().x][curr_c().y].i_items,self.map[curr_c().x][curr_c().y])
-
+	for i in worn:
+		i.add_to_container(self.map[curr_c().x][curr_c().y].i_items,self.map[curr_c().x][curr_c().y])
+	if wield!=null:
+		wield.add_to_container(self.map[curr_c().x][curr_c().y].i_items,self.map[curr_c().x][curr_c().y])
 	free_from_data()
 
 func _to_string():

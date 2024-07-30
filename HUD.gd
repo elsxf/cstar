@@ -23,5 +23,6 @@ func _process(_delta):
 	+"time units : "+str(DEF.playerM.time_u)+"\n"\
 	+"world_c : "+str(DEF.playerM.world_c)+"\n"\
 	+"dun_c : "+str(DEF.playerM.dun_c)+"\n"\
-	+"d_level : "+str(DEF.playerM.d_level)+"\n"
+	+"d_level : "+str(DEF.playerM.d_level)+"\n"\
+	+"world time units : "+str(DEF.world_time)+"\n"
 	pass

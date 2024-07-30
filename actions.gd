@@ -48,28 +48,28 @@ static func attack_phys(mob:Mob, target:Vector2i, calc:bool):
 		var targetMob = mob.map[target.x][target.y].m_mob
 		if targetMob==null:
 			return 0#no longer a target, refund
-			
-		#TODO:stats and skills
-		var strength = 1
-		var skill = 4
-			
-		#TODO:hit/miss calc
+		#TODO:calculate attack cost
+		var attack_cost = 25
 		
+		var toHit = mob.attributes["melee"] + 0 if mob.wield==null else mob.wield.to_hit
+		var DV = targetMob.attributes["dodge"]+ targetMob.attributes["agility"]
+		if DEF.contest(toHit,DV)>0:
+			#attack missed, do miss handling
+			return attack_cost / 2
 		#damage calculation on hit
 		var blunt = 0
 		var cut = 0
 		var pierce = 0
-		var toHit
+		var skill = mob.attributes["melee"]
+		var attr = mob.attributes["strength"]
 		if(mob.wield==null):
-			blunt = strength * skill
-			pierce = strength * (skill/5)
-			cut = strength * (skill/10)
-			toHit = sqrt(skill)
+			blunt = attr * skill
+			pierce = attr * (skill/5)
+			cut = attr * (skill/10)
 		else:
 			blunt = mob.wield.blunt
 			cut = mob.wield.cut
 			pierce = mob.wield.pierce
-			toHit = mob.wield.to_hit + sqrt(skill)
 		var layerTough = 0
 		var layerHard = 0
 		var layerStrength = 0
@@ -123,17 +123,15 @@ static func attack_phys(mob:Mob, target:Vector2i, calc:bool):
 		next_hit_spark = targetMob.curr_c()
 	return 25
 
-static func pickup(mob:Mob,toPickUp:Item, calc:bool):
+static func pickup(mob:Mob,toPickUp:Item, calc:bool, num = -1):
 	if not calc:
-		toPickUp.free_from_container()
-		toPickUp.add_to_container(mob.items,mob)
+		toPickUp.transfer_to_container(mob,mob.items,num)
 	return 50
 	
-static func drop(mob:Mob,toDrop:Item,calc:bool):
+static func drop(mob:Mob,toDrop:Item,calc:bool, num = -1):
 	if not calc:
-		var tile = mob.map[mob.curr_c().x][mob.curr_c().y]
-		toDrop.free_from_container()
-		toDrop.add_to_container(tile.i_items,tile)
+		var tile:Tile = mob.map[mob.curr_c().x][mob.curr_c().y]
+		toDrop.transfer_to_container(tile,tile.i_items,num)
 	return 10
 
 static func wear(mob:Mob,toWear:Item,calc:bool):
@@ -171,7 +169,7 @@ static func apply(mob:Mob,toApply:Item,calc:bool):
 			DEF.textBuffer+="[color=brown]can't do anything with that![/color]\n"
 	return 0
 
-static func harvest(tile:Tile, calc):
+static func harvest(tile:Tile, calc:bool):
 	if tile.f_name.is_empty() or not DEF.terrain_dict[tile.f_name].has("harvest"):
 		return 0
 	if not calc:
@@ -184,7 +182,7 @@ static func harvest(tile:Tile, calc):
 		tile.f_name = ""
 	return 600
 
-static func smash(tile:Tile, calc):
+static func smash(tile:Tile, calc:bool):
 	if not calc:
 		var feature = tile.f_name
 		if not feature.is_empty() and DEF.terrain_dict[feature].has("destroy_f"):
@@ -197,24 +195,27 @@ static func smash(tile:Tile, calc):
 			DEF.textBuffer+= "[color=brown]nothing to smash![/color]"
 	return 100
 
-static func craft(mob:Mob,recipie:Recipie,calc):
+static func craft(mob:Mob,recipie:Recipie,calc:bool):
 	if not calc:
 		if not recipie.work_on(500):
 			mob.current_activity = func craft_lambda(calc1):
+				mob.current_activity = null
 				var result = craft(mob,recipie,calc1)
-				if recipie.tu_left<=0:
-					mob.current_activity = null
 				return result
 	return 500
 
-static func construct(mob:Mob,tile:Tile,calc):
+static func construct(mob:Mob,tile:Tile,calc:bool):
 	if not calc:
-		if not tile.work_on(500):
+		tile.feature_data["work_left"]-=500
+		print(tile.feature_data["work_left"])
+		if tile.feature_data["work_left"]>0:
 			mob.current_activity = func construct_lambda(calc1):
+				mob.current_activity = null
 				var result = construct(mob,tile,calc1)
-				if tile.tu_left<=0:
-					mob.current_activity = null
 				return result
+		else:
+			tile.f_name = tile.feature_data["feature_into"]
+			tile.feature_data = null
 	return 500
 	
 static func wait() -> int:

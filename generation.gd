@@ -5,12 +5,12 @@ class_name GEN
 static var save_seed
 static var land_noise = FastNoiseLite.new()
 static var height_noise = FastNoiseLite.new()
-static var water_level = -.3
+static var water_level = -.27
 
 static func value_to_terrain(value:float)->int:
 	var wl_value = value+water_level
 	var terrainRange = DEF.terrain_dict["Surface_order"].size()
-	var t_value = clamp(int((wl_value+1) * (terrainRange)/2),0,terrainRange-2)
+	var t_value = clamp(int((wl_value+1) * (terrainRange)/2),0,terrainRange-1)
 	return t_value
 
 static func gen_overworld(_chunk_coord: Vector2i):
@@ -125,7 +125,7 @@ static func gen_dungeon(world_c:Vector2i, entry:Vector2i):
 	for i in range(numMobs):
 		var room_idx = randi_range(0,num_rooms-1)
 		var space = room_size[room_idx]-2
-		var m = Mob.new("Guy")
+		var m = Mob.new("Guard")
 		var mobLoc = room_loc[room_idx] + Vector2i(randi_range(-space,space),randi_range(-space,space))
 		m.add_to_data(chunk,mobs,world_c,1,mobLoc)
 	var result = [chunk,mobs]
@@ -138,12 +138,12 @@ static func gen_dungeon(world_c:Vector2i, entry:Vector2i):
 static func init_random(init_seed=Time.get_unix_time_from_system()):
 	seed(init_seed)
 	save_seed=init_seed
-	land_noise.frequency=.01
+	land_noise.frequency=.03
 	land_noise.fractal_lacunarity=3
 	land_noise.domain_warp_enabled=false
 	land_noise.cellular_distance_function=FastNoiseLite.DISTANCE_HYBRID
 	land_noise.seed = randi();
-	height_noise.frequency=.03
+	height_noise.frequency=.05
 	height_noise.fractal_lacunarity=3
 	height_noise.domain_warp_enabled=false
 	height_noise.domain_warp_frequency=1

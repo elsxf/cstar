@@ -133,10 +133,12 @@ func _ready():
 	$VP.size = Vector2(h*(1+1.6)/2,h)
 	
 	DEF.playerM = $Player.m
+	Item.new("Wood","Sword").add_to_container($Player.m.items,$Player.m)
+	Item.new("Stone","Sword").add_to_container($Player.m.items,$Player.m)
+	Item.new("Metal","Sword").add_to_container($Player.m.items,$Player.m)
 	Item.new("Wood","Spear").add_to_container($Player.m.items,$Player.m)
-	Item.new("Robe").add_to_container($Player.m.items,$Player.m)
-	Item.new("Stone","Mound").add_to_container($Player.m.items,$Player.m)
-	Item.new("Wood","Log").add_to_container($Player.m.items,$Player.m)
+	Item.new("Stone","Spear").add_to_container($Player.m.items,$Player.m)
+	Item.new("Metal","Spear").add_to_container($Player.m.items,$Player.m)
 	GEN.init_random()
 	
 	$Map.clear()
@@ -153,8 +155,6 @@ func _ready():
 
 	Signals.Player_take_action.connect(_on_player_take_action)
 	Signals.Player_action_taken.connect(_on_Player_action_taken)
-	
-	print(CRAFT.get_craftable_list())
 	pass # Replace with function body.
 
 
@@ -239,14 +239,15 @@ func _unhandled_input(event: InputEvent) -> void:
 					next_action = func pickup_lambda(calc):
 						return ACT.pickup($Player.m,valid_items[0],calc)
 				_:
-					var onChoice = func onChoice_lambda(choice):
-						valid_items.erase(choice)
-						Signals.emit_signal("Player_take_action",func action_lambda(calc):return ACT.pickup($Player.m,choice,calc))
+					var onChoice = func onChoice_lambda(choice, num:int = -1):
+						if num == -1 or num > choice.count:
+							valid_items.erase(choice)
+						Signals.emit_signal("Player_take_action",func action_lambda(calc):return ACT.pickup($Player.m,choice,calc,num))
 					$HUD/menus/Popup.popChoice("Pickup what?", valid_items, false,onChoice)
 		"drop":
 			#TODO:select tile to drop on
-			var onChoice = func onChoice_lambda(choice):
-				Signals.emit_signal("Player_take_action",func drop_lambda(calc):return ACT.drop($Player.m,choice,calc))
+			var onChoice = func onChoice_lambda(choice, num = -1):
+				Signals.emit_signal("Player_take_action",func drop_lambda(calc):return ACT.drop($Player.m,choice,calc, num))
 			$HUD/menus/Popup.popChoice("Drop what?", $Player.m.items, false, onChoice)
 			#var choice =  await Signal($HUD/menus,'choiceMade')
 			#next_action = func drop_lambda(calc):
@@ -359,6 +360,7 @@ func _on_player_take_action(Action_Lambda) -> void:
 				hitSpark(ACT.next_hit_spark)
 			break
 		else:
+			DEF.world_time+=1
 			for m in current_mobs:
 				m.give_tu(1)
 				if(m!=$Player.m):
