@@ -105,7 +105,9 @@ func draw_panel():
 		"Character":
 			left_elements["Attributes"]= DEF.playerM.attributes
 			left_array = left_elements["Attributes"].keys()
-			left_lambda = func toSkill(skill):return DEF.numToSkill(skill,true)
+			left_lambda = func toSkill(skill):
+				var num = (DEF.numToSkill(skill, true))
+				return str(int(num))+"[color=dark_blue]("+str(int(100*(num-int(num))))+"%)[/color]"
 			Panel2_enabled = false
 			pass
 		"Construct":
@@ -216,6 +218,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 				close_menu()
 			else:
 				enter_menu("Construct")
+		"character":
+			if $Pages.get_tab_title($Pages.current_tab)=="Character":
+				close_menu()
+			else:
+				enter_menu("Character")
 	draw_panel()
 	$Panel1.scroll_to_line(left_idx-1)
 	$Panel2.scroll_to_line(right_idx-1)

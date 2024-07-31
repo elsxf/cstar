@@ -2,9 +2,12 @@ res://overworld.tscn
 res://styles/menu_panel.tres
 res://styles/menu_outline.tres
 res://highilght.gdshader
+res://overworld.gd
+res://saveGame.json
 res://hitSpark.tscn
 res://game_over.tscn
 res://menus.tscn
-res://MenuBack.gd
 res://defines.gd
-res://actions.gd
+res://Signals.gd
+res://tile.gd
+res://Map.gd

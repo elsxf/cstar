@@ -9,7 +9,9 @@ static var next_hit_spark = null
 static func move_horizontal(mob,Map:Array,move_vector:Vector3i,_move_mode:int = Move_Modes.WALK,calc:bool = false)->int:
 	var next_coord = Vector2i(HEX.add_2_3(mob.curr_c(),move_vector))
 
-	if(DEF.isInChunk(next_coord)):
+	if(DEF.isInChunk(next_coord) or DEF.playerM.d_level==-1):
+		next_coord.x = (next_coord.x+DEF.chunk_size)%DEF.chunk_size
+		next_coord.y = (next_coord.y+DEF.chunk_size)%DEF.chunk_size
 		var next_tile = Map[next_coord.x][next_coord.y]
 		var next_tile_cost = next_tile.get_m_cost()
 		if next_tile_cost>=0:
@@ -49,19 +51,32 @@ static func attack_phys(mob:Mob, target:Vector2i, calc:bool):
 		if targetMob==null:
 			return 0#no longer a target, refund
 		#TODO:calculate attack cost
-		var attack_cost = 25
+		var attack_cost:int = 25
 		
-		var toHit = mob.attributes["melee"] + 0 if mob.wield==null else mob.wield.to_hit
-		var DV = targetMob.attributes["dodge"]+ targetMob.attributes["agility"]
+		var toHit:int = mob.getAttr("melee") + (0 if mob.wield==null else mob.wield.to_hit)
+		var DV:int = targetMob.getAttr("dodge")+ targetMob.getAttr("agility")
+		DEF.textBuffer+= str(toHit)+" vs "+str(DV)+"\n"
+		
+		mob.trainAttr("melee",DV-toHit)
+		targetMob.trainAttr("dodge",toHit-DV)
 		if DEF.contest(toHit,DV)>0:
 			#attack missed, do miss handling
+			if(targetMob==DEF.playerM):
+				DEF.textBuffer+="[color=brown]"
+			elif(mob==DEF.playerM):
+				DEF.textBuffer+="[color=yellow]"
+			else:
+				DEF.textBuffer+="[color=BEIGE]"
+			DEF.textBuffer+=(str(mob)+" Misses the "+str(targetMob)+"[/color]\n")
 			return attack_cost / 2
+			
+			
 		#damage calculation on hit
-		var blunt = 0
-		var cut = 0
-		var pierce = 0
-		var skill = mob.attributes["melee"]
-		var attr = mob.attributes["strength"]
+		var blunt:int = 0
+		var cut:int = 0
+		var pierce:int = 0
+		var skill:int = DEF.numToSkill(mob.attributes["melee"])
+		var attr:int = mob.attributes["strength"]
 		if(mob.wield==null):
 			blunt = attr * skill
 			pierce = attr * (skill/5)
@@ -78,39 +93,27 @@ static func attack_phys(mob:Mob, target:Vector2i, calc:bool):
 			layerHard += DEF.getProperty(DEF.mDefs,c.mat,&"hardness")
 			layerStrength += DEF.getProperty(DEF.mDefs,c.mat,&"strength")
 		
-		var bluntDamage = 0
-		var pierceDamage = 0
-		var cutDamage = 0
+		var bluntDamage = DEF.stdDist() * blunt
+		var pierceDamage = DEF.stdDist() * pierce
+		var cutDamage = DEF.stdDist() * cut
 		
 		if blunt:
-			var contest = DEF.contest(layerTough,blunt+toHit)
-			if contest<0:#layer deformed, deal damage to next layer
-				bluntDamage = DEF.rollDice(blunt,2)
-			if contest==0:#niether deformed nor broken, do nothing
-				pass
-			if contest>0:#layer did not deform, damage layer
-				bluntDamage = DEF.rollDice(blunt,2)
-				#TODO:damage items and anatomy layers
-				pass
+			#blunt bypasses hardness stop
+			if DEF.contest(bluntDamage,layerStrength)>0:
+				bluntDamage*=.5
 		if pierce:
-			var contest = DEF.contest(layerStrength,pierce+toHit)
-			if contest<0:#layer stopped point
-				pass
-			if contest == 0:#layer was hit but not pierced
-				pierceDamage = DEF.rollDice(pierce,2)
-			if contest>0:#layer hit and penetrated, damage it and next layer
-				#TODO: layer stuff
-				pierceDamage = DEF.rollDice(pierce,2)*2
+			#hardness stop blocks 100%
+			if DEF.contest(pierceDamage,layerHard)>0:
+				pierceDamage = 0
+			if DEF.contest(pierceDamage,layerStrength)>0:
+				pierceDamage *= .7
 		if cut:
-			var contest = DEF.contest(layerHard,cut+toHit)
-			if contest<0:#layer harder, not cut
-				pass
-			if contest == 0:#cut stoped at layer, convert to blunt
-				cutDamage = DEF.rollDice(blunt,2)
-			if contest>0:#layer cut, damage it and next layer
-				#TODO: layer stuff
-				cutDamage = DEF.rollDice(cut,2*2)
-			
+			#hardnes stop block 50%
+			if DEF.contest(cutDamage,layerHard)>0:
+				cutDamage *= .5
+			if DEF.contest(cutDamage,layerStrength)>0:
+				cutDamage *= .5
+			#TODO: cut causes bleed and clothing damage to less hard
 		var damageTotal = bluntDamage + pierceDamage + cutDamage
 		targetMob.change_hp(-damageTotal)
 		if(targetMob==DEF.playerM):
@@ -121,7 +124,7 @@ static func attack_phys(mob:Mob, target:Vector2i, calc:bool):
 			DEF.textBuffer+="[color=BEIGE]"
 		DEF.textBuffer+=(str(mob)+" dealt "+str(bluntDamage)+"/"+str(cutDamage)+"/"+str(pierceDamage)+"damage to "+str(targetMob)+"[/color]\n")
 		next_hit_spark = targetMob.curr_c()
-	return 25
+	return 5
 
 static func pickup(mob:Mob,toPickUp:Item, calc:bool, num = -1):
 	if not calc:

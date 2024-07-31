@@ -22,6 +22,7 @@ var wield : Item = null
 
 @export var Hp_max : int
 var Hp : int
+var focus : int = 100
 
 var factionStr : String
 @export var faction : int
@@ -79,6 +80,10 @@ func set_hp(value:int):
 		
 func give_tu(turns:int):
 	time_u += turns * speed
+	#one second passes
+	var rest_focus = 100
+	var focus_delta = pow(rest_focus-focus,.2) if focus<rest_focus else -pow(abs(rest_focus-focus),.2)
+	focus += focus_delta
 
 func add_to_data(map_array:Array,mob_list:Array, world_coord:Vector2i,hieght:int, coord:Vector2i = Vector2i(DEF.chunk_size/2,DEF.chunk_size/2)):
 	self.d_level = hieght
@@ -106,7 +111,7 @@ func act():
 	if next_action!=null:
 		time_u -= next_action.call(false)
 		next_action=null
-		
+
 func get_tu_cost() -> int:
 	if next_action!=null:
 		return next_action.call(true)
@@ -121,6 +126,19 @@ func get_access_items(dist:int = 1):
 	for i in HEX.inRange(DEF.playerM.curr_c(),dist):
 		valid_items.append_array(map[i.x][i.y].i_items)
 	return valid_items
+
+func getAttr(attr:String):
+	return DEF.numToSkill(self.attributes[attr])
+
+func trainAttr(attr:String, relDiff:float):
+	if not DEF.EntryHasFlag(DEF.mob_dict,self.name,&"canTrain"):
+		return
+	var before = getAttr(attr)
+	var exp_earned:int =  max(1,float(focus)/100 * 1.08**relDiff)
+	focus -= 1
+	self.attributes[attr]+=exp_earned
+	if self == DEF.playerM and getAttr(attr)!=before:
+		DEF.textBuffer += "[color=green] Your "+str(attr) +" has increased to "+str(getAttr(attr))+"![/color]"
 
 func get_brain():
 	if current_activity != null:

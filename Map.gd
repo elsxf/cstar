@@ -3,7 +3,7 @@ extends TileMap
 
 
 func _tile_data_runtime_update(layer: int, coords: Vector2i, tile_data: TileData):
-	var currTile = get_parent().current_map[coords.x][coords.y]
+	var currTile = DEF.current_map[coords.x][coords.y]
 	match layer:
 		DEF.Layer_Names.Mobs:
 			var tileMob = currTile.m_mob

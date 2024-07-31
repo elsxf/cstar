@@ -1,12 +1,12 @@
 {
 	"default":{
-		"strength":400,
-		"agility":400,
-		"perception":400,
-		"intelligence":400,
+		"strength":200,
+		"agility":200,
+		"perception":200,
+		"intelligence":200,
 		
-		"melee":100,
-		"dodge":100,
+		"melee":50,
+		"dodge":50,
 		"blunt":0,
 		"cut":0,
 		"pierce":0,

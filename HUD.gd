@@ -17,12 +17,13 @@ func _process(_delta):
 		DEF.textBuffer = ""
 		
 	#Info panel pdate
-	$Panel/Info.text = "HP :"+DEF.toBar(DEF.playerM.Hp,DEF.playerM.Hp_max,5)+"\n"\
+	$Panel/Info.text = "HP :"+DEF.toBar(DEF.playerM.Hp,DEF.playerM.Hp_max,7)+"\n"\
 	+"Last Action : "+last_action_name+"\n"\
 	+"last action cost : "+str(last_action_cost)+"\n"\
 	+"time units : "+str(DEF.playerM.time_u)+"\n"\
 	+"world_c : "+str(DEF.playerM.world_c)+"\n"\
 	+"dun_c : "+str(DEF.playerM.dun_c)+"\n"\
 	+"d_level : "+str(DEF.playerM.d_level)+"\n"\
-	+"world time units : "+str(DEF.world_time)+"\n"
+	+"world time units : "+str(DEF.world_time)+"\n"\
+	+"Foucs : "+DEF.toBar(DEF.playerM.focus,100,5)+"\n"
 	pass

@@ -54,6 +54,90 @@ static var sDefs = JSON.parse_string(FileAccess.get_file_as_string("shape_defs.j
 static var gameState = {"isdead":false,&"focus":Focus.WORLD,&"prevFocus":null}
 static var textBuffer = ""
 
+
+enum {
+	SAVE_OVERWORLD,
+	SAVE_DUNGEONS,
+}
+
+static var saveState ={
+	SAVE_OVERWORLD:[],
+	SAVE_DUNGEONS:{},
+}
+
+
+static var current_level
+static var current_coords
+static var current_map = []
+static var current_mobs = []
+	
+static func save_chunk():
+	#var chunk = []
+	#var used = $Map.get_used_cells(DEF.Layer_Names.Terrain)
+	#chunk.append($Map.get_pattern(DEF.Layer_Names.Terrain, used))
+	#chunk.append($Map.get_pattern(DEF.Layer_Names.Features, used))
+	##clear player FOV and save unknown/unseen TODO:lots of optimization posibilities here( only 0 and 1 )
+	#var vis_hex = DEF.vis_t_dat[0][DEF.T_data_cols.Scource]
+	#var unseen_hex = DEF.vis_t_dat[DEF.vis_tile_names.Unseen][DEF.T_data_cols.Alt]
+	#for i in playerM.FOV:
+		#$Map.set_cell(DEF.Layer_Names.Vis,i,vis_hex,Vector2(0,0),unseen_hex)
+	#chunk.append($Map.get_pattern(DEF.Layer_Names.Vis, used))
+	#TODO: save known/unknown
+	var save = []
+	save.append(current_map)
+	playerM.free_from_data()
+	save.append(current_mobs)
+	return save
+
+static func load_chunk(data):
+	current_map = data[0]
+	current_mobs = data[1]
+	playerM.add_to_data(current_map,current_mobs,playerM.world_c,playerM.d_level,playerM.dun_c)
+	
+	Signals.HUD_set_map.emit(current_map)
+	#$Map.set_pattern(DEF.Layer_Names.Terrain, Vector2i(0,0), data[0])
+	#$Map.set_pattern(DEF.Layer_Names.Features, Vector2i(0,0), data[1])
+	#$Map.set_pattern(DEF.Layer_Names.Vis, Vector2i(0,0), data[2])
+	#playerM.set_self($Map)
+
+static func change_map():
+#save current stuff
+	var curr_chunk = save_chunk()
+	if current_level==-1:#SAVE OVERWORLD
+		saveState[SAVE_OVERWORLD]=curr_chunk
+	else:#SAVE SUBWORLD
+		if(not saveState[SAVE_DUNGEONS].has(current_coords)):#create subworld at this chunk if not already exists
+			saveState[SAVE_DUNGEONS][current_coords]=[]
+		if saveState[SAVE_DUNGEONS][current_coords].size()-1<current_level:
+			#saveState[SAVE_DUNGEONS][$Player.world_c].append([])
+			#saveState[SAVE_DUNGEONS][$Player.world_c][$Player.d_level].append(curr_chunk)
+			saveState[SAVE_DUNGEONS][current_coords].append(curr_chunk)
+		else:
+			#already exists, replace with updated version
+			saveState[SAVE_DUNGEONS][current_coords][current_level] = curr_chunk
+	
+	#load stuff
+	if(playerM.d_level==-1):
+		load_chunk(saveState[SAVE_OVERWORLD])
+	else:
+		if(saveState[SAVE_DUNGEONS].has(playerM.world_c) and saveState[SAVE_DUNGEONS][playerM.world_c].size()>playerM.d_level):
+			#area already generated, load from save
+			load_chunk(saveState[SAVE_DUNGEONS][playerM.world_c][playerM.d_level])
+		else:
+			#need to generate area
+			if(playerM.d_level==0):
+				load_chunk(GEN.gen_surface(playerM.world_c,current_map[playerM.world_c.x][playerM.world_c.y]))
+			else:
+				load_chunk(GEN.gen_dungeon(playerM.world_c,playerM.curr_c()))
+		playerM.FOV.clear()#dont let previous seen be replaced with unseen, all are unknown to start
+	#build terrain
+	#update map location
+	current_level=playerM.d_level
+	if(current_level==-1):
+		current_coords=null
+	else:
+		current_coords=playerM.world_c
+
 static func process_json():
 	if json_was_processed:
 		return
@@ -179,13 +263,19 @@ static func contest(stat1,stat2)->int:
 	#returns negative if stat1 wins, positive if stat2 wins, 0 if tie
 	var stat1roll = rollDice(3,6)
 	var stat2roll = rollDice(3,6)
+	var result
 	if (stat1roll==18 and stat2roll!=18) or (stat1roll!=3 and stat2roll==3):
 		#stat1 crit
-		return -18 - stat1
-	if (stat2roll==18 and stat1roll!=18) or (stat2roll!=3 and stat1roll==3):
+		result = -18 - stat1
+	elif (stat2roll==18 and stat1roll!=18) or (stat2roll!=3 and stat1roll==3):
 		#stat2 crit
-		return 18 + stat2
-	return (stat2roll+stat2)-(stat1roll+stat1)
+		result = 18 + stat2
+	else:
+		result = (stat2roll+stat2)-(stat1roll+stat1)
+	return result
+
+static func stdDist():
+	return (float(rollDice(3,6))-3)/15
 
 static func toBar(part, total, numchars:int = 2, color:bool = true):
 	var percent:float = float(part)/total
