@@ -3,27 +3,24 @@ class_name Item
 
 @export var name : StringName
 
-var container
-var container_array : Array
+@export var container : Resource
+@export var container_array : Array
 
-var shape : StringName
-var mat : StringName
+@export var shape : StringName
+@export var mat : StringName
 
-var weight : int = 0#in grams
-var volume : int = 0#in mL
-var density : float = 1#in g/mL
-var count : int = 1
+@export var weight : int = 0#in grams
+@export var volume : int = 0#in mL
+@export var density : float = 1#in g/mL
+@export var count : int = 1
 
-var subItems = []
-
-var to_hit : int = 0
-var blunt : int = 0
-var cut : int = 0
-var pierce : int = 0
+@export var to_hit : int = 0
+@export var blunt : int = 0
+@export var cut : int = 0
+@export var pierce : int = 0
 
 @export var tile_id:int
 @export var tile_coord:Vector2
-@export var tile_alt = 0
 
 func _init(materialName,shapeName:String="", num_of:int=1):
 	count = num_of
@@ -31,31 +28,42 @@ func _init(materialName,shapeName:String="", num_of:int=1):
 		self.name = materialName.name
 		self.shape = materialName.shape
 		self.mat = materialName.mat
-		self.subItems = materialName.subItems
-		self.weight = materialName.weight
-		self.volume = materialName.volume
-		self.density = materialName.density
-	elif shapeName.is_empty() and materialName is String:#predef item name
-		self.name = materialName
-		self.shape = DEF.item_dict[self.name][&"shape"]
-		self.mat = DEF.item_dict[self.name][&"material"]
-		self.volume = DEF.getProperty(DEF.sDefs,self.shape,&"m_count")
-		self.density = DEF.getProperty(DEF.mDefs,self.mat,&"density")
-		self.weight = self.density * self.volume
+		self.weight = int(materialName.weight)
+		self.volume = int(materialName.volume)
+		self.density = float(materialName.density)
+	elif shapeName.is_empty() and materialName is String:#predef item name or serialized
+		if materialName.begins_with("Item:"):
+			#serialid, begin deserialization
+			var parsed = materialName.split(":")
+			self.name = parsed[1]
+			self.shape = parsed[2]
+			self.mat = parsed[3]
+			self.volume = parsed[4]
+			self.density = parsed[5]
+			self.weight = parsed[6]
+		else:
+			#predef item name, get defs from item.jons
+			self.name = materialName
+			self.shape = DEF.item_dict[self.name][&"shape"]
+			self.mat = DEF.item_dict[self.name][&"material"]
+			self.volume = DEF.getProperty(DEF.sDefs,self.shape,&"m_count")
+			self.density = DEF.getProperty(DEF.mDefs,self.mat,&"density")
+			self.weight = self.density * self.volume
 	elif DEF.getProperty(DEF.sDefs,shapeName,&"m_count") is Array:#multipart item
 		self.shape = shapeName
 		self.name = shapeName
 		for shapes in range(DEF.getProperty(DEF.sDefs,shapeName,&"m_count").size()):
 			var subItemMat
+			var subItemShape
 			if materialName is Array:
 				subItemMat = materialName[shapes]
 			else:
 				subItemMat = materialName
-			subItems.append(Item.new(subItemMat,DEF.getProperty(DEF.sDefs,shapeName,&"m_count")[shapes]))
-		for item in subItems:
-			self.volume += item.volume
-			self.weight+=item.weight
-		self.mat = subItems[0].mat
+			subItemShape = DEF.getProperty(DEF.sDefs,shapeName,&"m_count")[shapes]
+			var tempItem = Item.new(subItemMat,subItemShape)
+			self.volume += tempItem.volume
+			self.weight += tempItem.weight
+		self.mat =  materialName[0].mat if materialName is Array else materialName
 		self.density = DEF.getProperty(DEF.mDefs,self.mat,&"density")
 	else:#material/shape definition
 		self.name = shapeName
@@ -91,8 +99,12 @@ func add_to_container(put_array:Array, container_obj, num_to_add:int = -1):
 		to_put.container_array = put_array
 		to_put.container = container_obj
 	
-	
-	
+func Serialize()->String:
+	var serialStr = "Item:"
+	for i in [name, mat, shape, weight, volume, density]:
+		serialStr += str(i)+":"
+	return serialStr
+
 func free_from_container(num_to_free:int = -1):
 	if num_to_free == -1 or num_to_free>=count:
 		self.container_array.erase(self)
@@ -130,8 +142,6 @@ func _to_string_verbose():
 	if self.pierce>0:
 		verboseString+=" pierce:"+str(self.pierce)
 	verboseString += "\n[color=DARK_GRAY]A "+self.shape+" made of "+self.mat+ "[/color]"
-	for i in subItems:
-		verboseString += "\n"+str(i)
 	return verboseString
 
 func _ready():

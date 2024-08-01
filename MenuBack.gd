@@ -257,7 +257,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 					#get all items of given material
 					var valid_items = []
 					for i in DEF.playerM.get_access_items():
-						if i.mat == chosen_material and i.subItems.is_empty():
+						if i.mat == chosen_material and not (DEF.getProperty(DEF.sDefs,i.shape,&"m_count") is Array):
 							valid_items.append(i)
 					var volume_needed = DEF.getProperty(DEF.sDefs,chosen_shape,"m_count")
 					var volume_has = 0

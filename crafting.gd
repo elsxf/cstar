@@ -32,7 +32,7 @@ static func get_valid_mats(shape:StringName,mob:Mob):
 	var mob_mats = []
 	var mat_counts = {}
 	for i in mob.get_access_items():
-		if reqFlag & DEF.mDefs[i.mat][&"flags"] != reqFlag or cantFlag & DEF.mDefs[i.mat][&"flags"] or not i.subItems.is_empty() or i.shape==shape:
+		if reqFlag & DEF.mDefs[i.mat][&"flags"] != reqFlag or cantFlag & DEF.mDefs[i.mat][&"flags"] or DEF.getProperty(DEF.sDefs,i.shape,&"m_count") is Array or i.shape==shape:
 				continue;
 		if not mat_counts.has(i.mat):
 			mat_counts[i.mat] = 0

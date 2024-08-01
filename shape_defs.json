@@ -18,7 +18,7 @@
 		"m_count":1,
 	},
 	"Pole":{
-		"m_count":15000,
+		"m_count":7000,
 		"m_range":2,
 		"to_hit":2,
 		"flags":["needsShapeable"],

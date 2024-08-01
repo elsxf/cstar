@@ -87,6 +87,10 @@ func _ready():
 	var h = get_viewport_rect().size.y
 	$VP.size = Vector2(h*(1+1.6)/2,h)
 	
+	Signals.Player_take_action.connect(_on_player_take_action)
+	Signals.Player_action_taken.connect(_on_Player_action_taken)
+	Signals.HUD_set_map.connect(_on_HUD_set_map)
+	
 	DEF.playerM = $Player.m
 	Item.new("Wood","Sword").add_to_container($Player.m.items,$Player.m)
 	Item.new("Stone","Sword").add_to_container($Player.m.items,$Player.m)
@@ -104,13 +108,9 @@ func _ready():
 	DEF.current_coords=null
 	DEF.current_level=-1
 	
-	$Player.m.add_to_data(DEF.current_map,DEF.current_mobs,Vector2i(DEF.chunk_size/2,DEF.chunk_size/2),-1)
+	$Player.m.add_to_data(DEF.current_mobs,Vector2i(DEF.chunk_size/2,DEF.chunk_size/2),-1)
 	do_LOS()
 	offset_map()
-
-	Signals.Player_take_action.connect(_on_player_take_action)
-	Signals.Player_action_taken.connect(_on_Player_action_taken)
-	Signals.HUD_set_map.connect(_on_HUD_set_map)
 	pass # Replace with function body.
 
 
@@ -272,14 +272,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			target_tile = DEF.current_map[target_loc.x%DEF.chunk_size][target_loc.y%DEF.chunk_size]
 			if(target_tile.m_mob==null):
 				next_action = func move_horizontal_lambda(calc):
-					return ACT.move_horizontal($Player.m,DEF.current_map,horiz_vector,0,calc)
+					return ACT.move_horizontal($Player.m,horiz_vector,0,calc)
 			else:
 				next_action = func attack_p_lambda(calc):
 					return ACT.attack_phys($Player.m,target_loc,calc)
 					
 	if(vert_vector!=null):
 		next_action = func move_vertical_lambda(calc):
-			return ACT.move_vertical($Player.m,DEF.current_map,vert_vector,0,calc)
+			return ACT.move_vertical($Player.m,vert_vector,0,calc)
 
 	if(next_action!=null):
 		Signals.emit_signal("Player_take_action",next_action)
@@ -332,7 +332,7 @@ func _on_player_take_action(Action_Lambda) -> void:
 
 
 	if($Player.m.Hp<=0):
-		await %Popup.popInput("You died!")
+		await $HUD/menus/Popup.popInput("You died!")
 		get_tree().root.add_child(preload("res://game_over.tscn").instantiate())
 		queue_free()
 	
@@ -340,8 +340,9 @@ func _on_player_take_action(Action_Lambda) -> void:
 	
 	#check if map needs to change
 	if($Player.m.d_level!=DEF.current_level or (DEF.current_coords!=null and $Player.m.world_c!=DEF.current_coords)):
-		DEF.change_map()
-		$Map.clear()
+		pass
+		#$Map.clear()
+		#DEF.change_map()
 		
 	#update seen/unseen los stuff
 	#set all known to unseen
@@ -350,14 +351,14 @@ func _on_player_take_action(Action_Lambda) -> void:
 	$Map.scale = DEF.tile_scale*zoomScale
 	offset_map()
 	do_LOS()
-	
+	6
 	Signals.emit_signal("Player_action_taken")
 	
 func _on_Player_action_taken():
 	if DEF.playerM.current_activity!=null:
 		Signals.emit_signal("Player_take_action", DEF.playerM.current_activity)
 
-func _on_HUD_set_map(mapArray:Array):
+func _on_HUD_set_map(mapArray):
 	for i in $Map.get_used_cells(0):
 		$Map.set_cell(DEF.Layer_Names.Vis,i,DEF.vis_t_dat[DEF.vis_tile_names.Unknown][DEF.T_data_cols.Scource],Vector2i(0,0),DEF.vis_t_dat[DEF.vis_tile_names.Unknown][DEF.T_data_cols.Alt])
 	for i in range(DEF.chunk_size):

@@ -20,9 +20,10 @@ func _init(Into:Item, Reagents:Array, num_of = 1):
 	cut = 0
 	pierce = 0
 	Into_item = Into
-	Ing = Reagents
-	for i in Ing:
-		i.free_from_container(1)
+	Ing.resize(Reagents.size())
+	for i in Reagents.size():
+		Ing[i]= Reagents[i].mat
+		Reagents[i].free_from_container(1)
 	num_results = num_of
 	var item_mat_difficulty = DEF.getProperty(DEF.mDefs,Into.mat,&"hardness")/2 * DEF.getProperty(DEF.mDefs,Into.mat,&"strength") / DEF.getProperty(DEF.mDefs,Into.mat,&"toughness")
 	tu_left = item_mat_difficulty * Into.weight * 50 / 1000

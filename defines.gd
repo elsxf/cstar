@@ -66,45 +66,31 @@ static var saveState ={
 }
 
 
-static var current_level
-static var current_coords
+static var current_level:int = -1
+static var current_coords = Vector2i(32,32)
 static var current_map = []
 static var current_mobs = []
 	
 static func save_chunk():
-	#var chunk = []
-	#var used = $Map.get_used_cells(DEF.Layer_Names.Terrain)
-	#chunk.append($Map.get_pattern(DEF.Layer_Names.Terrain, used))
-	#chunk.append($Map.get_pattern(DEF.Layer_Names.Features, used))
 	##clear player FOV and save unknown/unseen TODO:lots of optimization posibilities here( only 0 and 1 )
-	#var vis_hex = DEF.vis_t_dat[0][DEF.T_data_cols.Scource]
-	#var unseen_hex = DEF.vis_t_dat[DEF.vis_tile_names.Unseen][DEF.T_data_cols.Alt]
-	#for i in playerM.FOV:
-		#$Map.set_cell(DEF.Layer_Names.Vis,i,vis_hex,Vector2(0,0),unseen_hex)
-	#chunk.append($Map.get_pattern(DEF.Layer_Names.Vis, used))
-	#TODO: save known/unknown
 	var save = []
-	save.append(current_map)
 	playerM.free_from_data()
+	save.append(current_map.duplicate(true))
 	save.append(current_mobs)
 	return save
 
 static func load_chunk(data):
 	current_map = data[0]
 	current_mobs = data[1]
-	playerM.add_to_data(current_map,current_mobs,playerM.world_c,playerM.d_level,playerM.dun_c)
-	
+	playerM.add_to_data(current_mobs,playerM.world_c,playerM.d_level,playerM.dun_c)
 	Signals.HUD_set_map.emit(current_map)
-	#$Map.set_pattern(DEF.Layer_Names.Terrain, Vector2i(0,0), data[0])
-	#$Map.set_pattern(DEF.Layer_Names.Features, Vector2i(0,0), data[1])
-	#$Map.set_pattern(DEF.Layer_Names.Vis, Vector2i(0,0), data[2])
-	#playerM.set_self($Map)
 
 static func change_map():
 #save current stuff
 	var curr_chunk = save_chunk()
 	if current_level==-1:#SAVE OVERWORLD
 		saveState[SAVE_OVERWORLD]=curr_chunk
+		print("saving overworld")
 	else:#SAVE SUBWORLD
 		if(not saveState[SAVE_DUNGEONS].has(current_coords)):#create subworld at this chunk if not already exists
 			saveState[SAVE_DUNGEONS][current_coords]=[]
@@ -118,12 +104,15 @@ static func change_map():
 	
 	#load stuff
 	if(playerM.d_level==-1):
+		print("loading overworld")
 		load_chunk(saveState[SAVE_OVERWORLD])
 	else:
 		if(saveState[SAVE_DUNGEONS].has(playerM.world_c) and saveState[SAVE_DUNGEONS][playerM.world_c].size()>playerM.d_level):
 			#area already generated, load from save
+			print("loading area at", playerM.world_c," ",playerM.d_level)
 			load_chunk(saveState[SAVE_DUNGEONS][playerM.world_c][playerM.d_level])
 		else:
+			print("generating area at ", playerM.curr_c())
 			#need to generate area
 			if(playerM.d_level==0):
 				load_chunk(GEN.gen_surface(playerM.world_c,current_map[playerM.world_c.x][playerM.world_c.y]))
@@ -137,6 +126,23 @@ static func change_map():
 		current_coords=null
 	else:
 		current_coords=playerM.world_c
+
+static func recursively_serialize_object(instance) -> Dictionary:
+	var dict := inst_to_dict(instance)
+	for key in dict:
+		var field = dict[key]
+		
+		if field is Resource:
+			dict[key] = recursively_serialize_object(field)
+		elif field is Array:
+			var new_array := []
+			for entry in field:
+				new_array.append(recursively_serialize_object(entry))
+			dict[key] = new_array
+			pass
+		# else keep value
+
+	return dict
 
 static func process_json():
 	if json_was_processed:
@@ -278,7 +284,7 @@ static func stdDist():
 	return (float(rollDice(3,6))-3)/15
 
 static func toBar(part, total, numchars:int = 2, color:bool = true):
-	var percent:float = float(part)/total
+	var percent:float = max(0,float(part)/total)
 	var colors = ["DARK_RED","red","yellow","green","forest_green"]
 	var result = "[b]"
 	if color:

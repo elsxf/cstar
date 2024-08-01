@@ -6,13 +6,13 @@ enum Move_Modes{WALK,HOVER,TELEPORT}
 
 static var next_hit_spark = null
 
-static func move_horizontal(mob,Map:Array,move_vector:Vector3i,_move_mode:int = Move_Modes.WALK,calc:bool = false)->int:
+static func move_horizontal(mob:Mob,move_vector:Vector3i,_move_mode:int = Move_Modes.WALK,calc:bool = false)->int:
 	var next_coord = Vector2i(HEX.add_2_3(mob.curr_c(),move_vector))
 
-	if(DEF.isInChunk(next_coord) or DEF.playerM.d_level==-1):
+	if(DEF.isInChunk(next_coord) or mob.d_level==-1):
 		next_coord.x = (next_coord.x+DEF.chunk_size)%DEF.chunk_size
 		next_coord.y = (next_coord.y+DEF.chunk_size)%DEF.chunk_size
-		var next_tile = Map[next_coord.x][next_coord.y]
+		var next_tile = mob.get_map()[next_coord.x][next_coord.y]
 		var next_tile_cost = next_tile.get_m_cost()
 		if next_tile_cost>=0:
 			if next_tile.m_mob==null:#TODO: switch with friendly
@@ -20,25 +20,27 @@ static func move_horizontal(mob,Map:Array,move_vector:Vector3i,_move_mode:int = 
 					DEF.textBuffer+=(str(mob)+" moved to "+str(next_coord)+"\n")
 					#actually move mob
 					#remove old tile assignment
-					Map[mob.curr_c().x][mob.curr_c().y].m_mob=null
+					mob.get_map()[mob.curr_c().x][mob.curr_c().y].m_mob=null
 					if(mob.d_level==-1):
 						mob.world_c=next_coord
 						#print($Player.world_c)
 					else:
 						mob.dun_c=next_coord
 						#print($Player.dun_c)
-					Map[mob.curr_c().x][mob.curr_c().y].m_mob=mob
+					mob.get_map()[mob.curr_c().x][mob.curr_c().y].m_mob=mob
 					#if Map.get_cell_source_id(DEF.Layer_Names.Vis,mob.curr_c())==DEF.vis_t_dat[DEF.vis_tile_names.Seen][0]:
 						#Map.set_cell(DEF.Layer_Names.Mobs,mob.curr_c(),mob.tile_id,mob.tile_coord,mob.tile_alt)
 				#TU cost of action
 			return next_tile_cost * 50
 	return 0#cant move there, fix this later
 	
-static func move_vertical(mob:Mob,Map:Array,move_vector:int,_move_mode:int = Move_Modes.WALK,calc:bool = false)->int:	
-	var curr_feature = Map[mob.curr_c().x][mob.curr_c().y].f_name
+static func move_vertical(mob:Mob,move_vector:int,_move_mode:int = Move_Modes.WALK,calc:bool = false)->int:	
+	var curr_feature = mob.get_map()[mob.curr_c().x][mob.curr_c().y].f_name
 	if( ((curr_feature==&"DownStair" or mob.d_level==-1) and move_vector==1) or ((curr_feature==&"UpStair" or mob.d_level==0) and move_vector==-1)):
 		if not calc:
+			mob.get_map()[mob.curr_c().x][mob.curr_c().y].m_mob=null
 			mob.d_level+=move_vector
+			DEF.change_map()
 			#$Player.FOV = []
 			if(mob.d_level==-1):
 				mob.dun_c= Vector2i(DEF.chunk_size/2,DEF.chunk_size/2)
@@ -47,7 +49,7 @@ static func move_vertical(mob:Mob,Map:Array,move_vector:int,_move_mode:int = Mov
 	
 static func attack_phys(mob:Mob, target:Vector2i, calc:bool):
 	if not calc:
-		var targetMob = mob.map[target.x][target.y].m_mob
+		var targetMob = mob.get_map()[target.x][target.y].m_mob
 		if targetMob==null:
 			return 0#no longer a target, refund
 		#TODO:calculate attack cost
@@ -133,7 +135,7 @@ static func pickup(mob:Mob,toPickUp:Item, calc:bool, num = -1):
 	
 static func drop(mob:Mob,toDrop:Item,calc:bool, num = -1):
 	if not calc:
-		var tile:Tile = mob.map[mob.curr_c().x][mob.curr_c().y]
+		var tile:Tile = mob.get_map()[mob.curr_c().x][mob.curr_c().y]
 		toDrop.transfer_to_container(tile,tile.i_items,num)
 	return 10
 

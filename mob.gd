@@ -3,28 +3,27 @@ class_name Mob
 
 @export var name : String
 
-var world_c:Vector2i
-var dun_c:Vector2i
-var d_level : int
-var map : Array
+@export var world_c:Vector2i
+@export var dun_c:Vector2i
+@export var d_level : int
 var list_of_mobs : Array
 var FOV = []
-var sight_range : int
-var target_tile : Vector2i = Vector2i(-1,-1)
+@export var sight_range : int
+@export var target_tile : Vector2i = Vector2i(-1,-1)
 
-var time_u : int = 0
-var speed : int = 100
-var attributes:Dictionary = {}
+@export var time_u : int = 0
+@export var speed : int = 100
+@export var attributes:Dictionary = {}
 
-var items : Array = []
-var worn : Array = []
-var wield : Item = null
+@export var items : Array = []
+@export var worn : Array = []
+@export var wield : Item = null
 
 @export var Hp_max : int
-var Hp : int
-var focus : int = 100
+@export var Hp : int
+@export var focus : int = 100
 
-var factionStr : String
+@export var factionStr : String
 @export var faction : int
 @export var hostile_to : int
 
@@ -36,31 +35,78 @@ var next_action = null
 var current_activity = null
 
 func _init(mob_name:String):
-	self.name = mob_name
-	self.Hp_max = DEF.mob_dict[mob_name]["hp"]
-	self.Hp = self.Hp_max
-	self.sight_range = DEF.getProperty(DEF.mob_dict,self.name,&"sightRange")
-	for w in DEF.getProperty(DEF.mob_dict,self.name,&"wear"):
-		var parsed = w.split(" ")
-		if parsed.size()==1:
-			Item.new(parsed[0]).add_to_container(worn,self)
-		else:
-			Item.new(parsed[0], parsed[1]).add_to_container(worn,self)
-	if not DEF.getProperty(DEF.mob_dict,self.name,&"wield").is_empty():
-		var parsed = DEF.getProperty(DEF.mob_dict,self.name,&"wield").split(" ")
-		if parsed.size() == 1:
-			wield = Item.new(parsed[0])
-		else:
-			wield = Item.new(parsed[0],parsed[1])
-	self.speed = DEF.getProperty(DEF.mob_dict,self.name,&"speed")
-	self.attributes = DEF.skill_dict[DEF.getProperty(DEF.mob_dict,self.name,&"skills")]
-	self.tile_id = DEF.getProperty(DEF.mob_dict,self.name,&"source")
-	self.tile_coord = Vector2i(DEF.getProperty(DEF.mob_dict,self.name,&"A_coord_x"),DEF.getProperty(DEF.mob_dict,self.name,&"A_coord_y"))
-	self.factionStr = DEF.getProperty(DEF.mob_dict,self.name,&"faction")
-	self.faction = DEF.faction_dict[factionStr]
-	self.hostile_to = 0
-	for i in  DEF.getProperty(DEF.mob_dict,self.name,&"hostile_to"):
-		self.hostile_to = self.hostile_to |  int(DEF.faction_dict[i])
+	if mob_name.begins_with("Mob:"):
+		#deserializing
+		var parsed = mob_name.split(":")
+		_init(parsed[1])
+		time_u = int(parsed[2])
+		target_tile = Vector2i(parsed[3])
+		Hp = int(parsed[4])
+		focus = int(parsed[5])
+		
+		var itemParsed = parsed[6].split(";")
+		var itemList = []
+		itemList.resize(itemParsed.size())
+		for i in itemParsed.size():
+			itemList[i]=Item.new(itemParsed[i])
+		items=itemList
+		
+		var wornParsed = parsed[7].split(";")
+		var wornList = []
+		wornList.resize(wornParsed.size())
+		for i in wornParsed.size():
+			wornList[i]=Item.new(wornParsed[i])
+		worn=wornList
+	
+	if wield !=null:
+		serialStr += "wield;"+wield.serialize()+":"
+	
+	else:
+		self.name = mob_name
+		self.Hp_max = DEF.mob_dict[mob_name]["hp"]
+		self.Hp = self.Hp_max
+		self.sight_range = DEF.getProperty(DEF.mob_dict,self.name,&"sightRange")
+		for w in DEF.getProperty(DEF.mob_dict,self.name,&"wear"):
+			var parsed = w.split(" ")
+			if parsed.size()==1:
+				Item.new(parsed[0]).add_to_container(worn,self)
+			else:
+				Item.new(parsed[0], parsed[1]).add_to_container(worn,self)
+		if not DEF.getProperty(DEF.mob_dict,self.name,&"wield").is_empty():
+			var parsed = DEF.getProperty(DEF.mob_dict,self.name,&"wield").split(" ")
+			if parsed.size() == 1:
+				wield = Item.new(parsed[0])
+			else:
+				wield = Item.new(parsed[0],parsed[1])
+		self.speed = DEF.getProperty(DEF.mob_dict,self.name,&"speed")
+		self.attributes = DEF.skill_dict[DEF.getProperty(DEF.mob_dict,self.name,&"skills")]
+		self.tile_id = DEF.getProperty(DEF.mob_dict,self.name,&"source")
+		self.tile_coord = Vector2i(DEF.getProperty(DEF.mob_dict,self.name,&"A_coord_x"),DEF.getProperty(DEF.mob_dict,self.name,&"A_coord_y"))
+		self.factionStr = DEF.getProperty(DEF.mob_dict,self.name,&"faction")
+		self.faction = DEF.faction_dict[factionStr]
+		self.hostile_to = 0
+		for i in  DEF.getProperty(DEF.mob_dict,self.name,&"hostile_to"):
+			self.hostile_to = self.hostile_to |  int(DEF.faction_dict[i])
+
+func serialize()->String:
+	var serialStr = "Mob:"
+	for i in [name,time_u,target_tile,Hp,focus]:
+		serialStr += str(i) + ":"
+		
+	serialStr += "Items;"
+	for i in items:
+		serialStr += i.serialize() + ";"
+	serialStr += ":"
+	
+	serialStr += "Worn;"
+	for i in worn:
+		serialStr += i.serialize() + ";"
+	serialStr += ";"
+	
+	if wield !=null:
+		serialStr += "wield;"+wield.serialize()+":"
+	
+	return serialStr
 
 func set_self(Map:TileMap):
 	Map.set_cell(DEF.Layer_Names.Mobs,curr_c(),self.tile_id,self.tile_coord,self.tile_alt)
@@ -85,18 +131,17 @@ func give_tu(turns:int):
 	var focus_delta = pow(rest_focus-focus,.2) if focus<rest_focus else -pow(abs(rest_focus-focus),.2)
 	focus += focus_delta
 
-func add_to_data(map_array:Array,mob_list:Array, world_coord:Vector2i,hieght:int, coord:Vector2i = Vector2i(DEF.chunk_size/2,DEF.chunk_size/2)):
+func add_to_data(mob_list:Array, world_coord:Vector2i,hieght:int, coord:Vector2i = Vector2i(DEF.chunk_size/2,DEF.chunk_size/2)):
 	self.d_level = hieght
 	self.world_c = world_coord
 	self.dun_c = coord
-	map_array[curr_c().x][curr_c().y].m_mob = self
-	self.map = map_array
+	DEF.current_map[curr_c().x][curr_c().y].m_mob = self
 	mob_list.append(self)
 	self.list_of_mobs = mob_list
 	
 func free_from_data():
-	self.map[curr_c().x][curr_c().y].m_mob = null
-	self.list_of_mobs.erase(self)		
+	DEF.current_map[curr_c().x][curr_c().y].m_mob = null
+	self.list_of_mobs.erase(self)
 
 func curr_c():
 	if(d_level==-1):
@@ -124,7 +169,7 @@ func get_access_items(dist:int = 1):
 	if wield!=null:
 		valid_items.append(wield)
 	for i in HEX.inRange(DEF.playerM.curr_c(),dist):
-		valid_items.append_array(map[i.x][i.y].i_items)
+		valid_items.append_array(DEF.current_map[i.x][i.y].i_items)
 	return valid_items
 
 func getAttr(attr:String):
@@ -154,7 +199,7 @@ func get_brain():
 				var cansee:bool = true
 				#attempt sightLine
 				for i in HEX.inLine(self.curr_c(),m.curr_c()):
-					if self.map[i.x][i.y].get_v_cost()==-1:
+					if DEF.current_map[i.x][i.y].get_v_cost()==-1:
 						cansee = false
 						break
 				if cansee:
@@ -164,7 +209,7 @@ func get_brain():
 	var target_dist = HEX.oddr_dist(self.curr_c(),target_tile)
 	if target_tile == Vector2i(-1,-1):
 		target_dist = 0
-	var target_mob = map[target_tile.x][target_tile.y].m_mob
+	var target_mob = DEF.current_map[target_tile.x][target_tile.y].m_mob
 	if(target_dist==0):
 		#TODO:return to routine
 		next_action = func wait_lambda(_calc):
@@ -176,10 +221,10 @@ func get_brain():
 			return  ACT.attack_phys(self,target_tile,calc)
 		return
 	else:
-		var next_step = PATH.pathFind(curr_c(),target_tile,map).back()
+		var next_step = PATH.pathFind(curr_c(),target_tile,DEF.current_map).back()
 		
 		next_action = func move_to_lambda(calc):
-			return  ACT.move_horizontal(self,map,HEX.get_c_vector(next_step,curr_c()),0,calc)
+			return  ACT.move_horizontal(self,HEX.get_c_vector(next_step,curr_c()),0,calc)
 		return
 	
 func get_action_str():
@@ -187,14 +232,20 @@ func get_action_str():
 		return str(next_action)
 	return "noAct"
 	
+func get_map():
+	if self.d_level == DEF.current_level && (DEF.current_coords==null or self.world_c == DEF.current_coords):
+		return DEF.current_map
+	else:
+		return [self.d_level, self.world_c]
+	
 func die():
 	#drop loot
 	for i in items:
-		i.add_to_container(self.map[curr_c().x][curr_c().y].i_items,self.map[curr_c().x][curr_c().y])
+		i.add_to_container(DEF.current_map[curr_c().x][curr_c().y].i_items,DEF.current_map[curr_c().x][curr_c().y])
 	for i in worn:
-		i.add_to_container(self.map[curr_c().x][curr_c().y].i_items,self.map[curr_c().x][curr_c().y])
+		i.add_to_container(DEF.current_map[curr_c().x][curr_c().y].i_items,DEF.current_map[curr_c().x][curr_c().y])
 	if wield!=null:
-		wield.add_to_container(self.map[curr_c().x][curr_c().y].i_items,self.map[curr_c().x][curr_c().y])
+		wield.add_to_container(DEF.current_map[curr_c().x][curr_c().y].i_items,DEF.current_map[curr_c().x][curr_c().y])
 	free_from_data()
 
 func _to_string():
