@@ -14,3 +14,4 @@ res://items.json
 res://mobs.json
 res://hexFuncs.gd
 res://actions.gd
+res://MainMenu.gd

@@ -1,0 +1,40 @@
+[gd_scene load_steps=5 format=3 uid="uid://18l2xrd5rb7l"]
+
+[ext_resource type="StyleBox" uid="uid://bhmh15o8ptm68" path="res://styles/menu_panel.tres" id="1_a0aec"]
+[ext_resource type="FontFile" uid="uid://cylhjxuw36osc" path="res://fonts/FairfaxHaxHD.ttf" id="2_b5dqe"]
+[ext_resource type="Script" path="res://MainMenu.gd" id="3_gs1tu"]
+
+[sub_resource type="Theme" id="Theme_a40pk"]
+default_font = ExtResource("2_b5dqe")
+default_font_size = 64
+/styles/box = ExtResource("1_a0aec")
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_a40pk")
+script = ExtResource("3_gs1tu")
+
+[node name="New" type="Button" parent="."]
+layout_mode = 0
+offset_left = 464.0
+offset_top = 64.0
+offset_right = 976.0
+offset_bottom = 344.0
+theme_override_styles/normal = ExtResource("1_a0aec")
+text = "NEW"
+
+[node name="Load" type="Button" parent="."]
+offset_left = 912.0
+offset_top = 520.0
+offset_right = 1792.0
+offset_bottom = 872.0
+theme_override_styles/normal = ExtResource("1_a0aec")
+text = "Load"
+
+[connection signal="pressed" from="New" to="." method="_on_new_pressed"]
+[connection signal="pressed" from="Load" to="." method="_on_load_pressed"]

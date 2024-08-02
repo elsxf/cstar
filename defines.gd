@@ -58,6 +58,7 @@ static var textBuffer = ""
 enum {
 	SAVE_OVERWORLD,
 	SAVE_DUNGEONS,
+	PLAYER,
 }
 
 static var saveState ={
