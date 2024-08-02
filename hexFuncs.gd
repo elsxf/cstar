@@ -21,6 +21,15 @@ static func oddr_to_axial(hex: Vector2i):
 	var s = -q-r
 	return Vector3(q, r, s)
 	
+static func strToVec(vecStr):
+	if not vecStr is String or not vecStr is StringName:
+		return vecStr
+	var split = vecStr.replace("(","").split(",")
+	if split.size() == 2:
+		return Vector2(int(split[0]),int(split[1]))
+	if split.size() == 3:
+		return Vector3(int(split[0]),int(split[1]),int(split[2]))
+	
 static func axial_round(frac:Vector3):
 	var q = snapped(frac.x,1)
 	var r = snapped(frac.y,1)

@@ -35,78 +35,83 @@ var next_action = null
 var current_activity = null
 
 func _init(mob_name:String):
-	if mob_name.begins_with("Mob:"):
-		#deserializing
-		var parsed = mob_name.split(":")
-		_init(parsed[1])
-		time_u = int(parsed[2])
-		target_tile = Vector2i(parsed[3])
-		Hp = int(parsed[4])
-		focus = int(parsed[5])
-		
-		var itemParsed = parsed[6].split(";")
-		var itemList = []
-		itemList.resize(itemParsed.size())
-		for i in itemParsed.size():
-			itemList[i]=Item.new(itemParsed[i])
-		items=itemList
-		
-		var wornParsed = parsed[7].split(";")
-		var wornList = []
-		wornList.resize(wornParsed.size())
-		for i in wornParsed.size():
-			wornList[i]=Item.new(wornParsed[i])
-		worn=wornList
-	
-	if wield !=null:
-		serialStr += "wield;"+wield.serialize()+":"
-	
-	else:
-		self.name = mob_name
-		self.Hp_max = DEF.mob_dict[mob_name]["hp"]
-		self.Hp = self.Hp_max
-		self.sight_range = DEF.getProperty(DEF.mob_dict,self.name,&"sightRange")
-		for w in DEF.getProperty(DEF.mob_dict,self.name,&"wear"):
-			var parsed = w.split(" ")
-			if parsed.size()==1:
-				Item.new(parsed[0]).add_to_container(worn,self)
-			else:
-				Item.new(parsed[0], parsed[1]).add_to_container(worn,self)
-		if not DEF.getProperty(DEF.mob_dict,self.name,&"wield").is_empty():
-			var parsed = DEF.getProperty(DEF.mob_dict,self.name,&"wield").split(" ")
-			if parsed.size() == 1:
-				wield = Item.new(parsed[0])
-			else:
-				wield = Item.new(parsed[0],parsed[1])
-		self.speed = DEF.getProperty(DEF.mob_dict,self.name,&"speed")
-		self.attributes = DEF.skill_dict[DEF.getProperty(DEF.mob_dict,self.name,&"skills")]
-		self.tile_id = DEF.getProperty(DEF.mob_dict,self.name,&"source")
-		self.tile_coord = Vector2i(DEF.getProperty(DEF.mob_dict,self.name,&"A_coord_x"),DEF.getProperty(DEF.mob_dict,self.name,&"A_coord_y"))
-		self.factionStr = DEF.getProperty(DEF.mob_dict,self.name,&"faction")
-		self.faction = DEF.faction_dict[factionStr]
-		self.hostile_to = 0
-		for i in  DEF.getProperty(DEF.mob_dict,self.name,&"hostile_to"):
-			self.hostile_to = self.hostile_to |  int(DEF.faction_dict[i])
+	self.name = mob_name
+	self.Hp_max = DEF.mob_dict[mob_name]["hp"]
+	self.Hp = self.Hp_max
+	self.sight_range = DEF.getProperty(DEF.mob_dict,self.name,&"sightRange")
+	for w in DEF.getProperty(DEF.mob_dict,self.name,&"wear"):
+		var parsed = w.split(" ")
+		if parsed.size()==1:
+			Item.new(parsed[0]).add_to_container(worn,self)
+		else:
+			Item.new(parsed[0], parsed[1]).add_to_container(worn,self)
+	if not DEF.getProperty(DEF.mob_dict,self.name,&"wield").is_empty():
+		var parsed = DEF.getProperty(DEF.mob_dict,self.name,&"wield").split(" ")
+		if parsed.size() == 1:
+			wield = Item.new(parsed[0])
+		else:
+			wield = Item.new(parsed[0],parsed[1])
+	self.speed = DEF.getProperty(DEF.mob_dict,self.name,&"speed")
+	self.attributes = DEF.skill_dict[DEF.getProperty(DEF.mob_dict,self.name,&"skills")]
+	self.tile_id = DEF.getProperty(DEF.mob_dict,self.name,&"source")
+	self.tile_coord = Vector2i(DEF.getProperty(DEF.mob_dict,self.name,&"A_coord_x"),DEF.getProperty(DEF.mob_dict,self.name,&"A_coord_y"))
+	self.factionStr = DEF.getProperty(DEF.mob_dict,self.name,&"faction")
+	self.faction = DEF.faction_dict[factionStr]
+	self.hostile_to = 0
+	for i in  DEF.getProperty(DEF.mob_dict,self.name,&"hostile_to"):
+		self.hostile_to = self.hostile_to |  int(DEF.faction_dict[i])
 
-func serialize()->String:
-	var serialStr = "Mob:"
-	for i in [name,time_u,target_tile,Hp,focus]:
-		serialStr += str(i) + ":"
-		
-	serialStr += "Items;"
-	for i in items:
-		serialStr += i.serialize() + ";"
-	serialStr += ":"
+func serialize()->Dictionary:
+	var serialStr = {}
+	serialStr["Mob"]=[name,dun_c,time_u,target_tile,Hp,focus]
 	
-	serialStr += "Worn;"
-	for i in worn:
-		serialStr += i.serialize() + ";"
-	serialStr += ";"
+	var itemsSerialized = []
+	itemsSerialized.resize(items.size())
+	for i in items.size():
+		itemsSerialized[i] = items[i].serialize()
+	serialStr["Items"] = itemsSerialized
 	
-	if wield !=null:
-		serialStr += "wield;"+wield.serialize()+":"
+	var itemsWorn = []
+	itemsWorn.resize(worn.size())
+	for i in worn.size():
+		itemsWorn[i] = worn[i].serialize()
+	serialStr["Worn"] = itemsWorn
+	
+	serialStr["Wield"] = null if wield == null else wield.serialize()
 	
 	return serialStr
+
+func deSerialize(serialized:Dictionary):
+#deserializing
+	var parsed = serialized
+	_init(parsed["Mob"][0])
+	dun_c = Vector2i(HEX.strToVec(parsed["Mob"][1]))
+	time_u = int(parsed["Mob"][2])
+	target_tile = Vector2i(HEX.strToVec(parsed["Mob"][3]))
+	Hp = int(parsed["Mob"][4])
+	focus = int(parsed["Mob"][5])
+	
+	var itemParsed = parsed["Items"]
+	var itemList = []
+	itemList.resize(itemParsed.size())
+	for i in itemParsed.size():
+		var newItem = Item.new("default")
+		newItem.deSerialize(itemParsed[i])
+		itemList[i]=newItem
+	items=itemList
+	
+	var wornParsed = parsed["Worn"]
+	var wornList = []
+	wornList.resize(wornParsed.size())
+	for i in wornParsed.size():
+		var newItem = Item.new("default")
+		newItem.deSerialize(wornParsed[i])
+		wornList[i]=newItem
+	worn=wornList
+	
+	if parsed.size()>9:
+		var wieldParsed = parsed["Wield"]
+		wield = null if wieldParsed==null else Item.new("defualt").deSerialize(wieldParsed[0])
 
 func set_self(Map:TileMap):
 	Map.set_cell(DEF.Layer_Names.Mobs,curr_c(),self.tile_id,self.tile_coord,self.tile_alt)

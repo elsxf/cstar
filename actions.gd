@@ -28,8 +28,13 @@ static func move_horizontal(mob:Mob,move_vector:Vector3i,_move_mode:int = Move_M
 						mob.dun_c=next_coord
 						#print($Player.dun_c)
 					mob.get_map()[mob.curr_c().x][mob.curr_c().y].m_mob=mob
-					#if Map.get_cell_source_id(DEF.Layer_Names.Vis,mob.curr_c())==DEF.vis_t_dat[DEF.vis_tile_names.Seen][0]:
-						#Map.set_cell(DEF.Layer_Names.Mobs,mob.curr_c(),mob.tile_id,mob.tile_coord,mob.tile_alt)
+					match mob.get_map()[mob.curr_c().x][mob.curr_c().y].i_items.size():
+						0:
+							pass
+						1:
+							DEF.textBuffer+="You see here"+str( mob.get_map()[mob.curr_c().x][mob.curr_c().y].i_items[0])
+						_:
+							DEF.textBuffer+="You see here"+str( mob.get_map()[mob.curr_c().x][mob.curr_c().y].i_items[0]) + " and many more items"
 				#TU cost of action
 			return next_tile_cost * 50
 	return 0#cant move there, fix this later

@@ -1,4 +1,8 @@
 {
+	"default":{
+		"shape":"Cube",
+		"material":"Star",
+	},
 	"The Cube":{
 		"shape":"Cube",
 		"material":"Stone",

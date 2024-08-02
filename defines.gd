@@ -73,15 +73,29 @@ static var current_mobs = []
 	
 static func save_chunk():
 	##clear player FOV and save unknown/unseen TODO:lots of optimization posibilities here( only 0 and 1 )
-	var save = []
+	var save = {}
 	playerM.free_from_data()
-	save.append(current_map.duplicate(true))
-	save.append(current_mobs)
+	var savingMap = current_map.duplicate(true)
+	var savingMobs = current_mobs.duplicate(true)
+	for i in savingMap.size():
+		for j in savingMap[i].size():
+			savingMap[i][j]= savingMap[i][j].serialize()
+	for i in savingMobs.size():
+		savingMobs[i] = savingMobs[i].serialize()
+	save["Map"]=(savingMap)
+	save["Mobs"]=(savingMobs)
 	return save
 
 static func load_chunk(data):
-	current_map = data[0]
-	current_mobs = data[1]
+	for i in data["Map"].size():
+		for j in data["Map"][i].size():
+			current_map[i][j].deSerialize(data["Map"][i][j])
+	current_mobs = []
+	for i in data["Mobs"]:
+		var m = Mob.new("default")
+		m.deSerialize(i)
+		m.add_to_data(current_mobs,playerM.world_c,playerM.d_level,m.dun_c)
+		
 	playerM.add_to_data(current_mobs,playerM.world_c,playerM.d_level,playerM.dun_c)
 	Signals.HUD_set_map.emit(current_map)
 
@@ -103,6 +117,7 @@ static func change_map():
 			saveState[SAVE_DUNGEONS][current_coords][current_level] = curr_chunk
 	
 	#load stuff
+	playerM.FOV.clear()#dont let previous seen be replaced with unseen, all are unknown to start
 	if(playerM.d_level==-1):
 		print("loading overworld")
 		load_chunk(saveState[SAVE_OVERWORLD])
@@ -115,10 +130,10 @@ static func change_map():
 			print("generating area at ", playerM.curr_c())
 			#need to generate area
 			if(playerM.d_level==0):
-				load_chunk(GEN.gen_surface(playerM.world_c,current_map[playerM.world_c.x][playerM.world_c.y]))
+				current_mobs = GEN.gen_surface(playerM.world_c,current_map[playerM.world_c.x][playerM.world_c.y])[1]
 			else:
-				load_chunk(GEN.gen_dungeon(playerM.world_c,playerM.curr_c()))
-		playerM.FOV.clear()#dont let previous seen be replaced with unseen, all are unknown to start
+				current_mobs = GEN.gen_dungeon(playerM.world_c,playerM.curr_c())[1]
+			load_chunk(save_chunk())
 	#build terrain
 	#update map location
 	current_level=playerM.d_level
@@ -126,6 +141,7 @@ static func change_map():
 		current_coords=null
 	else:
 		current_coords=playerM.world_c
+		
 
 static func recursively_serialize_object(instance) -> Dictionary:
 	var dict := inst_to_dict(instance)

@@ -101,14 +101,15 @@ func _ready():
 	GEN.init_random()
 	
 	$Map.clear()
-	DEF.load_chunk(GEN.gen_overworld(Vector2(0,0)))
+	GEN.gen_overworld(Vector2(0,0))
+	$Player.m.add_to_data(DEF.current_mobs,Vector2i(DEF.chunk_size/2,DEF.chunk_size/2),-1)
 	DEF.saveState[DEF.SAVE_OVERWORLD] = DEF.save_chunk()
+	DEF.change_map()
 	#load_chunk(saveState[SAVE_OVERWORLD])
 	
 	DEF.current_coords=null
 	DEF.current_level=-1
 	
-	$Player.m.add_to_data(DEF.current_mobs,Vector2i(DEF.chunk_size/2,DEF.chunk_size/2),-1)
 	do_LOS()
 	offset_map()
 	pass # Replace with function body.
@@ -147,10 +148,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			if zoomScale<zoomMin:
 				zoomScale=zoomMax
 		"save&quit":
-			var Fopen = FileAccess.open("saveGame.json",FileAccess.WRITE)
-			Fopen.store_string(JSON.stringify(inst_to_dict(DEF.playerM)))
-			Fopen.close()
 			$HUD/menus/Popup.popInput("Hello, saving")
+			var Fopen = FileAccess.open("saveGame.json",FileAccess.WRITE)
+			Fopen.store_string(JSON.stringify(DEF.saveState))
+			Fopen.close()
 			get_tree().quit()
 		"Left":
 			horiz_vector =HEX.dir_vec[3]
@@ -351,7 +352,6 @@ func _on_player_take_action(Action_Lambda) -> void:
 	$Map.scale = DEF.tile_scale*zoomScale
 	offset_map()
 	do_LOS()
-	6
 	Signals.emit_signal("Player_action_taken")
 	
 func _on_Player_action_taken():

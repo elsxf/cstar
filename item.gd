@@ -31,24 +31,14 @@ func _init(materialName,shapeName:String="", num_of:int=1):
 		self.weight = int(materialName.weight)
 		self.volume = int(materialName.volume)
 		self.density = float(materialName.density)
-	elif shapeName.is_empty() and materialName is String:#predef item name or serialized
-		if materialName.begins_with("Item:"):
-			#serialid, begin deserialization
-			var parsed = materialName.split(":")
-			self.name = parsed[1]
-			self.shape = parsed[2]
-			self.mat = parsed[3]
-			self.volume = parsed[4]
-			self.density = parsed[5]
-			self.weight = parsed[6]
-		else:
-			#predef item name, get defs from item.jons
-			self.name = materialName
-			self.shape = DEF.item_dict[self.name][&"shape"]
-			self.mat = DEF.item_dict[self.name][&"material"]
-			self.volume = DEF.getProperty(DEF.sDefs,self.shape,&"m_count")
-			self.density = DEF.getProperty(DEF.mDefs,self.mat,&"density")
-			self.weight = self.density * self.volume
+	elif shapeName.is_empty() and materialName is String:#predef item
+		#predef item name, get defs from item.jons
+		self.name = materialName
+		self.shape = DEF.item_dict[self.name][&"shape"]
+		self.mat = DEF.item_dict[self.name][&"material"]
+		self.volume = DEF.getProperty(DEF.sDefs,self.shape,&"m_count")
+		self.density = DEF.getProperty(DEF.mDefs,self.mat,&"density")
+		self.weight = self.density * self.volume
 	elif DEF.getProperty(DEF.sDefs,shapeName,&"m_count") is Array:#multipart item
 		self.shape = shapeName
 		self.name = shapeName
@@ -99,11 +89,18 @@ func add_to_container(put_array:Array, container_obj, num_to_add:int = -1):
 		to_put.container_array = put_array
 		to_put.container = container_obj
 	
-func Serialize()->String:
-	var serialStr = "Item:"
-	for i in [name, mat, shape, weight, volume, density]:
-		serialStr += str(i)+":"
+func serialize()->Dictionary:
+	var serialStr = {}
+	serialStr["Item"] = [name, mat, shape, weight, volume, density]
 	return serialStr
+	
+func deSerialize(serialized : Dictionary):
+	self.name = serialized["Item"][0]
+	self.mat = serialized["Item"][1]
+	self.shape = serialized["Item"][2]
+	self.weight = serialized["Item"][3]
+	self.volume = serialized["Item"][4]
+	self.density = serialized["Item"][5]
 
 func free_from_container(num_to_free:int = -1):
 	if num_to_free == -1 or num_to_free>=count:
