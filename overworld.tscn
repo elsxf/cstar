@@ -1,8 +1,7 @@
-[gd_scene load_steps=62 format=3 uid="uid://63wxav1bwk3a"]
+[gd_scene load_steps=61 format=3 uid="uid://63wxav1bwk3a"]
 
 [ext_resource type="Texture2D" uid="uid://b0ymsbrq6gcn3" path="res://hex.png" id="1_2quo0"]
 [ext_resource type="Script" path="res://overworld.gd" id="1_hie4k"]
-[ext_resource type="PackedScene" uid="uid://bxslo4bmx4psm" path="res://player.tscn" id="3_mio54"]
 [ext_resource type="Texture2D" uid="uid://ce5scl5utrw7e" path="res://hex1.png" id="3_oylul"]
 [ext_resource type="Texture2D" uid="uid://cakio1vlevw4v" path="res://hex_blackout.png" id="4_coqbf"]
 [ext_resource type="Texture2D" uid="uid://dh2pqljfwje3g" path="res://hex_deep_water.png" id="4_jgrc3"]
@@ -960,10 +959,6 @@ layer_4/tile_data = PackedInt32Array()
 layer_5/name = "Visibility"
 layer_5/tile_data = PackedInt32Array()
 script = ExtResource("22_tcips")
-
-[node name="Player" parent="." instance=ExtResource("3_mio54")]
-visible = false
-position = Vector2(573, 368)
 
 [node name="SightLine" type="Line2D" parent="."]
 width = 2.0

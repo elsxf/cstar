@@ -29,6 +29,7 @@ theme_override_styles/normal = ExtResource("1_a0aec")
 text = "NEW"
 
 [node name="Load" type="Button" parent="."]
+layout_mode = 0
 offset_left = 912.0
 offset_top = 520.0
 offset_right = 1792.0

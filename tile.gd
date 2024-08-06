@@ -33,7 +33,6 @@ func deSerialize(serialStr):
 	self.known = int(parsed["Tile"][2])
 	
 	var itemParsed = parsed["Items"]
-	var itemList = []
 	for i in itemParsed.size():
 		if itemParsed[i].is_empty():
 			break

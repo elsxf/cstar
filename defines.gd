@@ -54,16 +54,14 @@ static var sDefs = JSON.parse_string(FileAccess.get_file_as_string("shape_defs.j
 static var gameState = {"isdead":false,&"focus":Focus.WORLD,&"prevFocus":null}
 static var textBuffer = ""
 
-
-enum {
-	SAVE_OVERWORLD,
-	SAVE_DUNGEONS,
-	PLAYER,
-}
+static var SAVE_OVERWORLD="o"
+static var SAVE_DUNGEONS="d"
+static var PLAYER="p"
 
 static var saveState ={
 	SAVE_OVERWORLD:[],
 	SAVE_DUNGEONS:{},
+	PLAYER:{},
 }
 
 
@@ -107,15 +105,15 @@ static func change_map():
 		saveState[SAVE_OVERWORLD]=curr_chunk
 		print("saving overworld")
 	else:#SAVE SUBWORLD
-		if(not saveState[SAVE_DUNGEONS].has(current_coords)):#create subworld at this chunk if not already exists
-			saveState[SAVE_DUNGEONS][current_coords]=[]
-		if saveState[SAVE_DUNGEONS][current_coords].size()-1<current_level:
+		if(not saveState[SAVE_DUNGEONS].has(str(current_coords))):#create subworld at this chunk if not already exists
+			saveState[SAVE_DUNGEONS][str(current_coords)]=[]
+		if saveState[SAVE_DUNGEONS][str(current_coords)].size()-1<current_level:
 			#saveState[SAVE_DUNGEONS][$Player.world_c].append([])
 			#saveState[SAVE_DUNGEONS][$Player.world_c][$Player.d_level].append(curr_chunk)
-			saveState[SAVE_DUNGEONS][current_coords].append(curr_chunk)
+			saveState[SAVE_DUNGEONS][str(current_coords)].append(curr_chunk)
 		else:
 			#already exists, replace with updated version
-			saveState[SAVE_DUNGEONS][current_coords][current_level] = curr_chunk
+			saveState[SAVE_DUNGEONS][str(current_coords)][current_level] = curr_chunk
 	
 	#load stuff
 	playerM.FOV.clear()#dont let previous seen be replaced with unseen, all are unknown to start
@@ -123,10 +121,10 @@ static func change_map():
 		print("loading overworld")
 		load_chunk(saveState[SAVE_OVERWORLD])
 	else:
-		if(saveState[SAVE_DUNGEONS].has(playerM.world_c) and saveState[SAVE_DUNGEONS][playerM.world_c].size()>playerM.d_level):
+		if(saveState[SAVE_DUNGEONS].has(str(playerM.world_c)) and saveState[SAVE_DUNGEONS][str(playerM.world_c)].size()>playerM.d_level):
 			#area already generated, load from save
 			print("loading area at", playerM.world_c," ",playerM.d_level)
-			load_chunk(saveState[SAVE_DUNGEONS][playerM.world_c][playerM.d_level])
+			load_chunk(saveState[SAVE_DUNGEONS][str(playerM.world_c)][playerM.d_level])
 		else:
 			print("generating area at ", playerM.curr_c())
 			#need to generate area
@@ -142,24 +140,42 @@ static func change_map():
 		current_coords=null
 	else:
 		current_coords=playerM.world_c
-		
 
-static func recursively_serialize_object(instance) -> Dictionary:
-	var dict := inst_to_dict(instance)
-	for key in dict:
-		var field = dict[key]
-		
-		if field is Resource:
-			dict[key] = recursively_serialize_object(field)
-		elif field is Array:
-			var new_array := []
-			for entry in field:
-				new_array.append(recursively_serialize_object(entry))
-			dict[key] = new_array
-			pass
-		# else keep value
+static func save_to_file():
+	var Fopen = FileAccess.open("saveGame.sav",FileAccess.WRITE)
+	saveState[PLAYER]["mobSerial"] = playerM.serialize()
+	saveState[PLAYER]["attr"] = playerM.attributes
+	saveState[PLAYER]["world"] = {}
+	saveState[PLAYER]["world"]["curr_c"] = playerM.dun_c
+	saveState[PLAYER]["world"]["world_c"] = playerM.world_c
+	saveState[PLAYER]["world"]["curr_level"] =  playerM.d_level
+	saveState["seed"] = GEN.save_seed
+	Fopen.store_string(JSON.stringify(DEF.saveState))
+	Fopen.close()
 
-	return dict
+static func load_from_file():
+	saveState = JSON.parse_string(FileAccess.get_file_as_string("saveGame.sav"))
+	DEF.playerM = Mob.new("Player")
+	playerM.deSerialize(saveState[PLAYER]["mobSerial"])
+	playerM.attributes = saveState[PLAYER]["attr"]
+	playerM.d_level = saveState[PLAYER]["world"]["curr_level"]
+	playerM.dun_c = HEX.strToVec(saveState[PLAYER]["world"]["curr_c"])
+	playerM.world_c = HEX.strToVec(saveState[PLAYER]["world"]["world_c"])
+	GEN.init_random(saveState["seed"])
+	DEF.current_coords= playerM.dun_c if playerM.d_level!=-1 else null
+	DEF.current_level=playerM.d_level
+	DEF.current_map.resize(DEF.chunk_size)
+	for i in current_map.size():
+		current_map[i]=[]
+		current_map[i].resize(DEF.chunk_size)
+		for j in current_map[i].size():
+			current_map[i][j] = Tile.new()
+	if playerM.d_level==-1:
+		load_chunk(saveState[SAVE_OVERWORLD])
+	else:
+		print(saveState[SAVE_DUNGEONS].keys())
+		print(saveState[SAVE_DUNGEONS][str(playerM.world_c)].size())
+		load_chunk(saveState[SAVE_DUNGEONS][str(playerM.world_c)][playerM.d_level])
 
 static func process_json():
 	if json_was_processed:

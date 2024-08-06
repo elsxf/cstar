@@ -21,13 +21,13 @@ func do_LOS():
 	#var unknown_hex =  DEF.vis_t_dat[DEF.vis_tile_names.Unknown][DEF.T_data_cols.Alt]
 	var unseen_hex = DEF.vis_t_dat[DEF.vis_tile_names.Unseen][DEF.T_data_cols.Alt]
 	var seen_hex = DEF.vis_t_dat[DEF.vis_tile_names.Seen][DEF.T_data_cols.Alt]
-	for i in $Player.m.FOV:
+	for i in DEF.playerM.FOV:
 		$Map.set_cell(DEF.Layer_Names.Vis,i,vis_hex,Vector2(0,0),unseen_hex)
 		$Map.set_cell(DEF.Layer_Names.Mobs,i,-1)
 		$Map.set_cell(DEF.Layer_Names.Items,i,-1)
 	#set visible to seen
-	$Player.m.FOV = LOS($Player.m.curr_c(),$Player.m.sight_range)
-	for i in $Player.m.FOV:
+	DEF.playerM.FOV = LOS(DEF.playerM.curr_c(),DEF.playerM.sight_range)
+	for i in DEF.playerM.FOV:
 		DEF.current_map[i.x][i.y].known = DEF.vis_tile_names.Unseen
 		#force redraw of tile contents
 		$Map.set_cell(DEF.Layer_Names.Mobs,i,-1)
@@ -63,7 +63,7 @@ func LOS(src: Vector2i, n:int):
 		
 
 func offset_map():#centers map on player
-	var mapOffset = Vector2(-$Player.m.curr_c())
+	var mapOffset = Vector2(-DEF.playerM.curr_c())
 	mapOffset.x-=float(absi(mapOffset.y)%2) /2
 	mapOffset*=Vector2($Map.tile_set.tile_size)*$Map.scale
 	mapOffset.y=(mapOffset.y*3)/4
@@ -83,7 +83,6 @@ func hex_to_pixel(tile):#gets center pixel of tilemap cell
 	
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	DEF.process_json()
 	var h = get_viewport_rect().size.y
 	$VP.size = Vector2(h*(1+1.6)/2,h)
 	
@@ -91,27 +90,15 @@ func _ready():
 	Signals.Player_action_taken.connect(_on_Player_action_taken)
 	Signals.HUD_set_map.connect(_on_HUD_set_map)
 	
-	DEF.playerM = $Player.m
-	Item.new("Wood","Sword").add_to_container($Player.m.items,$Player.m)
-	Item.new("Stone","Sword").add_to_container($Player.m.items,$Player.m)
-	Item.new("Metal","Sword").add_to_container($Player.m.items,$Player.m)
-	Item.new("Wood","Spear").add_to_container($Player.m.items,$Player.m)
-	Item.new("Stone","Spear").add_to_container($Player.m.items,$Player.m)
-	Item.new("Metal","Spear").add_to_container($Player.m.items,$Player.m)
-	GEN.init_random()
-	
 	$Map.clear()
-	GEN.gen_overworld(Vector2(0,0))
-	$Player.m.add_to_data(DEF.current_mobs,Vector2i(DEF.chunk_size/2,DEF.chunk_size/2),-1)
-	DEF.saveState[DEF.SAVE_OVERWORLD] = DEF.save_chunk()
+	
 	DEF.change_map()
 	#load_chunk(saveState[SAVE_OVERWORLD])
 	
-	DEF.current_coords=null
-	DEF.current_level=-1
 	
-	do_LOS()
 	offset_map()
+	do_LOS()
+
 	pass # Replace with function body.
 
 
@@ -148,10 +135,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			if zoomScale<zoomMin:
 				zoomScale=zoomMax
 		"save&quit":
-			$HUD/menus/Popup.popInput("Hello, saving")
-			var Fopen = FileAccess.open("saveGame.json",FileAccess.WRITE)
-			Fopen.store_string(JSON.stringify(DEF.saveState))
-			Fopen.close()
+			DEF.change_map()
+			DEF.save_to_file()
 			get_tree().quit()
 		"Left":
 			horiz_vector =HEX.dir_vec[3]
@@ -175,17 +160,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		"apply":
 			var onChoice = func onChoice_lambda(choice):
 				Signals.emit_signal("Player_take_action", func apply_lambda(calc):
-					return ACT.apply($Player.m,choice,calc))
-			$HUD/menus/Popup.popChoice("Apply what?", $Player.m.get_access_items(), true, onChoice)
+					return ACT.apply(DEF.playerM,choice,calc))
+			$HUD/menus/Popup.popChoice("Apply what?", DEF.playerM.get_access_items(), true, onChoice)
 			pass
 		"auto":
-			for i in HEX.inRange($Player.m.curr_c(), $Player.m.get_max_m_range()):
-				if DEF.current_map[i.x][i.y].m_mob==$Player.m:
+			for i in HEX.inRange(DEF.playerM.curr_c(), DEF.playerM.get_max_m_range()):
+				if DEF.current_map[i.x][i.y].m_mob==DEF.playerM:
 					continue
 				if DEF.current_map[i.x][i.y].m_mob!=null:
-					if DEF.hasFlag(DEF.current_map[i.x][i.y].m_mob.hostile_to, $Player.m.faction):
+					if DEF.hasFlag(DEF.current_map[i.x][i.y].m_mob.hostile_to, DEF.playerM.faction):
 						next_action = func attack_p_lambda(calc):
-							return ACT.attack_phys($Player.m,i,calc)
+							return ACT.attack_phys(DEF.playerM,i,calc)
 						break
 			if next_action == null:
 				DEF.textBuffer+="[color=brown]Nothing to attack\n[/color]"
@@ -193,30 +178,30 @@ func _unhandled_input(event: InputEvent) -> void:
 					return ACT.wait()
 		"pickup":
 			var valid_items = []
-			for i in HEX.inRange($Player.m.curr_c(),1):
+			for i in HEX.inRange(DEF.playerM.curr_c(),1):
 				valid_items.append_array(DEF.current_map[i.x][i.y].i_items)
 			match valid_items.size():
 				0:
 					DEF.textBuffer+="nothing to pick up\n"
 				1:
 					next_action = func pickup_lambda(calc):
-						return ACT.pickup($Player.m,valid_items[0],calc)
+						return ACT.pickup(DEF.playerM,valid_items[0],calc)
 				_:
 					var onChoice = func onChoice_lambda(choice, num:int = -1):
 						if num == -1 or num > choice.count:
 							valid_items.erase(choice)
-						Signals.emit_signal("Player_take_action",func action_lambda(calc):return ACT.pickup($Player.m,choice,calc,num))
+						Signals.emit_signal("Player_take_action",func action_lambda(calc):return ACT.pickup(DEF.playerM,choice,calc,num))
 					$HUD/menus/Popup.popChoice("Pickup what?", valid_items, false,onChoice)
 		"drop":
 			#TODO:select tile to drop on
 			var onChoice = func onChoice_lambda(choice, num = -1):
-				Signals.emit_signal("Player_take_action",func drop_lambda(calc):return ACT.drop($Player.m,choice,calc, num))
-			$HUD/menus/Popup.popChoice("Drop what?", $Player.m.items, false, onChoice)
+				Signals.emit_signal("Player_take_action",func drop_lambda(calc):return ACT.drop(DEF.playerM,choice,calc, num))
+			$HUD/menus/Popup.popChoice("Drop what?", DEF.playerM.items, false, onChoice)
 			#var choice =  await Signal($HUD/menus,'choiceMade')
 			#next_action = func drop_lambda(calc):
-						#return ACT.drop($Player.m,choice,calc)
+						#return ACT.drop(DEF.playerM,choice,calc)
 		"wear":
-			var possible_items = $Player.m.get_access_items()
+			var possible_items = DEF.playerM.get_access_items()
 			var valid_items = []
 			for i in possible_items:
 				if DEF.hasFlag(DEF.getProperty(DEF.sDefs,i.shape,&"flags"), DEF.sDefs[&"Flags"][&"wearable"]):
@@ -227,16 +212,16 @@ func _unhandled_input(event: InputEvent) -> void:
 				var onChoice = func onChoice_lambda(choice):
 					Signals.emit_signal("Player_take_action", func wear_lambda(calc):
 						valid_items.erase(choice)
-						return ACT.wear($Player.m,choice,calc))
+						return ACT.wear(DEF.playerM,choice,calc))
 				$HUD/menus/Popup.popChoice("wear what?",valid_items, true, onChoice)
 		"wield":
 			var onChoice = func onChoice_lambda(choice):
 				Signals.emit_signal("Player_take_action", func wield_lambda(calc):
-					return ACT.wield($Player.m,choice,calc))
-			$HUD/menus/Popup.popChoice("wield what?", $Player.m.get_access_items(), true, onChoice)
+					return ACT.wield(DEF.playerM,choice,calc))
+			$HUD/menus/Popup.popChoice("wield what?", DEF.playerM.get_access_items(), true, onChoice)
 		"Harvest":
 			var validTiles = []
-			for i in HEX.inRange($Player.m.curr_c(),1):
+			for i in HEX.inRange(DEF.playerM.curr_c(),1):
 				if not DEF.isInChunk(i):
 					continue
 				if not DEF.current_map[i.x][i.y].f_name.is_empty():
@@ -253,13 +238,13 @@ func _unhandled_input(event: InputEvent) -> void:
 						$Map.set_cell(DEF.Layer_Names.Highlight,i, 22, Vector2i(0, 0))
 					var choice = await $HUD/menus/Popup.popVector("Harvest Where?")
 					if choice!=null:
-						var target = HEX.add_2_3($Player.m.curr_c(),choice)
+						var target = HEX.add_2_3(DEF.playerM.curr_c(),choice)
 						next_action = func Harvest_lambda(calc):
 							return ACT.harvest(DEF.current_map[target.x][target.y],calc)
 		"smash":
 			var choice = await $HUD/menus/Popup.popVector("Smash Where?")
 			if choice!=null:
-				var target =HEX.add_2_3($Player.m.curr_c(),choice)
+				var target =HEX.add_2_3(DEF.playerM.curr_c(),choice)
 				next_action = func onChoice_lambda(calc):
 					var result = ACT.smash(DEF.current_map[target.x][target.y],calc)
 					DEF.current_map[target.x][target.y].set_self($Map,target)
@@ -267,20 +252,20 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	$Map.clear_layer(DEF.Layer_Names.Highlight)
 	if(horiz_vector!=null):
-		var target_loc =Vector2i(HEX.add_2_3($Player.m.curr_c(),horiz_vector))
+		var target_loc =Vector2i(HEX.add_2_3(DEF.playerM.curr_c(),horiz_vector))
 		var target_tile
 		if(DEF.isInChunk(target_loc) or DEF.playerM.d_level==-1):
 			target_tile = DEF.current_map[target_loc.x%DEF.chunk_size][target_loc.y%DEF.chunk_size]
 			if(target_tile.m_mob==null):
 				next_action = func move_horizontal_lambda(calc):
-					return ACT.move_horizontal($Player.m,horiz_vector,0,calc)
+					return ACT.move_horizontal(DEF.playerM,horiz_vector,0,calc)
 			else:
 				next_action = func attack_p_lambda(calc):
-					return ACT.attack_phys($Player.m,target_loc,calc)
+					return ACT.attack_phys(DEF.playerM,target_loc,calc)
 					
 	if(vert_vector!=null):
 		next_action = func move_vertical_lambda(calc):
-			return ACT.move_vertical($Player.m,vert_vector,0,calc)
+			return ACT.move_vertical(DEF.playerM,vert_vector,0,calc)
 
 	if(next_action!=null):
 		Signals.emit_signal("Player_take_action",next_action)
@@ -295,11 +280,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		#$SightLine.clear_points()
 		#$SightLine.add_point(hex_pix,0)
 		#$SightLine.add_point(scrnCnt(),1)
-	#for i in inRing($Player.curr_c(),cube_dist(oddr_to_axial(m_tile), $Player.curr_c())):
-		#$Map.set_cell(DEF.Layer_Names.Highlight,axial_to_oddr(i),1,Vector2i(0,0))
 	if event is InputEventMouseButton:
 		$Map.clear_layer(DEF.Layer_Names.Highlight)
-		var path = PATH.pathFind(m_tile,$Player.m.curr_c(),DEF.current_map)
+		var path = PATH.pathFind(m_tile,DEF.playerM.curr_c(),DEF.current_map)
 		if (path!=null):
 			for i in path:
 				$Map.set_cell(DEF.Layer_Names.Highlight,i,1,Vector2i(0,0))
@@ -308,14 +291,14 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _on_player_take_action(Action_Lambda) -> void:
-	$Player.m.next_action=Action_Lambda
+	DEF.playerM.next_action=Action_Lambda
 	$Map.clear_layer(DEF.Layer_Names.Highlight)
 	#timekeeping
-	while($Player.m.Hp>0):
-		if $Player.m.can_act():
-			$HUD.last_action_cost=$Player.m.get_tu_cost()
-			$HUD.last_action_name=$Player.m.get_action_str()
-			$Player.m.act()
+	while(DEF.playerM.Hp>0):
+		if DEF.playerM.can_act():
+			$HUD.last_action_cost=DEF.playerM.get_tu_cost()
+			$HUD.last_action_name=DEF.playerM.get_action_str()
+			DEF.playerM.act()
 			if(ACT.next_hit_spark!=null):
 				hitSpark(ACT.next_hit_spark)
 			break
@@ -323,7 +306,7 @@ func _on_player_take_action(Action_Lambda) -> void:
 			DEF.world_time+=1
 			for m in DEF.current_mobs:
 				m.give_tu(1)
-				if(m!=$Player.m):
+				if(m!=DEF.playerM):
 					while(m.can_act()):
 						if m.next_action==null:
 							m.get_brain()
@@ -332,15 +315,15 @@ func _on_player_take_action(Action_Lambda) -> void:
 							hitSpark(ACT.next_hit_spark)
 
 
-	if($Player.m.Hp<=0):
+	if(DEF.playerM.Hp<=0):
 		await $HUD/menus/Popup.popInput("You died!")
 		get_tree().root.add_child(preload("res://game_over.tscn").instantiate())
 		queue_free()
 	
-	#$HUD/Label.text = "Dungeon Level: "+str($Player.m.d_level)+"\nTime cost: " + str(tu_delta)+"\nHp: "+str($Player.m.Hp)
+	#$HUD/Label.text = "Dungeon Level: "+str(DEF.playerM.d_level)+"\nTime cost: " + str(tu_delta)+"\nHp: "+str(DEF.playerM.Hp)
 	
 	#check if map needs to change
-	if($Player.m.d_level!=DEF.current_level or (DEF.current_coords!=null and $Player.m.world_c!=DEF.current_coords)):
+	if(DEF.playerM.d_level!=DEF.current_level or (DEF.current_coords!=null and DEF.playerM.world_c!=DEF.current_coords)):
 		pass
 		#$Map.clear()
 		#DEF.change_map()
@@ -359,8 +342,10 @@ func _on_Player_action_taken():
 		Signals.emit_signal("Player_take_action", DEF.playerM.current_activity)
 
 func _on_HUD_set_map(mapArray):
-	for i in $Map.get_used_cells(0):
-		$Map.set_cell(DEF.Layer_Names.Vis,i,DEF.vis_t_dat[DEF.vis_tile_names.Unknown][DEF.T_data_cols.Scource],Vector2i(0,0),DEF.vis_t_dat[DEF.vis_tile_names.Unknown][DEF.T_data_cols.Alt])
+	$Map.clear()
+	#for i in $Map.get_used_cells(0):
+		#print("hello")
+		#$Map.set_cell(DEF.Layer_Names.Vis,i,DEF.vis_t_dat[DEF.vis_tile_names.Unknown][DEF.T_data_cols.Scource],Vector2i(0,0),DEF.vis_t_dat[DEF.vis_tile_names.Unknown][DEF.T_data_cols.Alt])
 	for i in range(DEF.chunk_size):
 		for j in range(DEF.chunk_size):
 			mapArray[i][j].set_self(%Map,Vector2i(i,j))
