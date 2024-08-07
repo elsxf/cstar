@@ -26,6 +26,7 @@ func _on_new_pressed() -> void:
 	Item.new("Wood","Spear").add_to_container(DEF.playerM.items,DEF.playerM)
 	Item.new("Stone","Spear").add_to_container(DEF.playerM.items,DEF.playerM)
 	Item.new("Metal","Spear").add_to_container(DEF.playerM.items,DEF.playerM)
+	DEF.playerM.wield = Item.new("Wood","Bow")
 	
 	GEN.init_random()
 	

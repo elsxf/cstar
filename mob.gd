@@ -131,10 +131,11 @@ func set_hp(value:int):
 		
 func give_tu(turns:int):
 	time_u += turns * speed
-	#one second passes
+	#[turns] seconds pass
 	var rest_focus = 100
-	var focus_delta = pow(rest_focus-focus,.2) if focus<rest_focus else -pow(abs(rest_focus-focus),.2)
-	focus += focus_delta
+	for i in turns:
+		var focus_delta = pow(rest_focus-focus,.6) if focus<rest_focus else -pow(abs(rest_focus-focus),.6)
+		focus += focus_delta
 
 func add_to_data(mob_list:Array, world_coord:Vector2i,hieght:int, coord:Vector2i = Vector2i(DEF.chunk_size/2,DEF.chunk_size/2)):
 	self.d_level = hieght
@@ -223,7 +224,7 @@ func get_brain():
 	elif(target_dist<=attack_range and target_mob!=null):
 		#TODO:attack with shortest range attack possible
 		next_action = func attack_lambda(calc):
-			return  ACT.attack_phys(self,target_tile,calc)
+			return  ACT.attack_phys_melee(self,target_tile,calc)
 		return
 	else:
 		var next_step = PATH.pathFind(curr_c(),target_tile,DEF.current_map).back()
@@ -259,7 +260,28 @@ func _to_string():
 func _ready():
 	pass # Replace with function body.
 
-
+func LOS(setFov:bool = true):
+	var canSee = []
+	if DEF.debug_esp:
+		for i in HEX.inRange(curr_c(),30):
+			if DEF.isInChunk(i):
+				canSee.append(i)
+		return canSee
+	for i in HEX.get_surround(curr_c()):
+		if DEF.isInChunk(i):
+			canSee.append(i)
+	for i in HEX.inRing(curr_c(),sight_range):
+		for j in HEX.inLine(curr_c(),i):
+			if not DEF.isInChunk(j):
+				break
+			if not canSee.has(j):
+				canSee.append(j)
+			var tile = DEF.current_map[j.x][j.y]
+			if tile.get_v_cost()==-1:
+				break
+	if setFov:
+		FOV = canSee
+	return canSee
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(_delta):
 	pass

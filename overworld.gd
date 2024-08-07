@@ -26,7 +26,7 @@ func do_LOS():
 		$Map.set_cell(DEF.Layer_Names.Mobs,i,-1)
 		$Map.set_cell(DEF.Layer_Names.Items,i,-1)
 	#set visible to seen
-	DEF.playerM.FOV = LOS(DEF.playerM.curr_c(),DEF.playerM.sight_range)
+	DEF.playerM.LOS()
 	for i in DEF.playerM.FOV:
 		DEF.current_map[i.x][i.y].known = DEF.vis_tile_names.Unseen
 		#force redraw of tile contents
@@ -35,31 +35,7 @@ func do_LOS():
 		DEF.current_map[i.x][i.y].draw_contents($Map, i)
 		$Map.set_cell(DEF.Layer_Names.Vis,i,vis_hex,Vector2(0,0),seen_hex)
 		
-func LOS(src: Vector2i, n:int):
-	if(DEF.debug_sightLine):
-		$SightLine.clear_points()
-	var canSee = []
-	if DEF.debug_esp:
-		for i in HEX.inRange(src,30):
-			if DEF.isInChunk(i):
-				canSee.append(i)
-		return canSee
-	for i in HEX.get_surround(src):
-		if DEF.isInChunk(i):
-			canSee.append(i)
-	for i in HEX.inRing(src,n):
-		for j in HEX.inLine(src,i):
-			if not DEF.isInChunk(j):
-				break
-			if not canSee.has(j):
-				canSee.append(j)
-			var tile = DEF.current_map[j.x][j.y]
-			if tile.get_v_cost()==-1:
-				break
-		if(DEF.debug_sightLine):
-			$SightLine.add_point(hex_to_pixel(src))
-			$SightLine.add_point(hex_to_pixel(canSee.back()))
-	return canSee
+
 		
 
 func offset_map():#centers map on player
@@ -170,12 +146,25 @@ func _unhandled_input(event: InputEvent) -> void:
 				if DEF.current_map[i.x][i.y].m_mob!=null:
 					if DEF.hasFlag(DEF.current_map[i.x][i.y].m_mob.hostile_to, DEF.playerM.faction):
 						next_action = func attack_p_lambda(calc):
-							return ACT.attack_phys(DEF.playerM,i,calc)
+							return ACT.attack_phys_melee(DEF.playerM,i,calc)
 						break
 			if next_action == null:
 				DEF.textBuffer+="[color=brown]Nothing to attack\n[/color]"
 				next_action = func wait_lambda(_calc):
 					return ACT.wait()
+		"fire","Force_fire":
+			if DEF.getProperty(DEF.sDefs,DEF.playerM.wield.shape,"r_range")==0:
+				DEF.textBuffer += "[color=BROWN]can't fire current weapon!\n[/color]"
+			else:
+				var choices = ACT.get_aim_mob_tiles(DEF.playerM)
+				match choices.size():
+					0:
+						DEF.textBuffer += "[color=BROWN]nothing to fire at!\n[/color]"
+					1:
+						next_action = func fire_lambda(calc):
+							return ACT.attack_phys_ranged(DEF.playerM,choices[0],calc)
+					_:
+						pass
 		"pickup":
 			var valid_items = []
 			for i in HEX.inRange(DEF.playerM.curr_c(),1):
@@ -261,7 +250,7 @@ func _unhandled_input(event: InputEvent) -> void:
 					return ACT.move_horizontal(DEF.playerM,horiz_vector,0,calc)
 			else:
 				next_action = func attack_p_lambda(calc):
-					return ACT.attack_phys(DEF.playerM,target_loc,calc)
+					return ACT.attack_phys_melee(DEF.playerM,target_loc,calc)
 					
 	if(vert_vector!=null):
 		next_action = func move_vertical_lambda(calc):

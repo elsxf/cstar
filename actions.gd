@@ -5,6 +5,57 @@ class_name ACT
 enum Move_Modes{WALK,HOVER,TELEPORT}
 
 static var next_hit_spark = null
+###############################
+#helper functions, not actions#
+###############################
+static func phys_penetration(target:Mob, blunt:int, cut:int,pierce:int)->Vector4i:
+	var layerTough = 0
+	var layerHard = 0
+	var layerStrength = 0
+	for c in target.worn:
+		layerTough += DEF.getProperty(DEF.mDefs,c.mat,&"toughness")
+		layerHard += DEF.getProperty(DEF.mDefs,c.mat,&"hardness")
+		layerStrength += DEF.getProperty(DEF.mDefs,c.mat,&"strength")
+	
+	var bluntDamage = DEF.stdDist() * blunt
+	var pierceDamage = DEF.stdDist() * pierce
+	var cutDamage = DEF.stdDist() * cut
+	
+	if blunt:
+		#blunt bypasses hardness stop
+		if DEF.contest(bluntDamage,layerStrength)>0:
+			bluntDamage*=.5
+	if pierce:
+		#hardness stop blocks 100%
+		if DEF.contest(pierceDamage,layerHard)>0:
+			pierceDamage = 0
+		if DEF.contest(pierceDamage,layerStrength)>0:
+			pierceDamage *= .7
+	if cut:
+		#hardnes stop block 50%
+		if DEF.contest(cutDamage,layerHard)>0:
+			cutDamage *= .5
+		if DEF.contest(cutDamage,layerStrength)>0:
+			cutDamage *= .5
+	var damageTotal = bluntDamage+cutDamage+pierceDamage
+	target.change_hp(-damageTotal)
+	return Vector4i(damageTotal,bluntDamage,cutDamage,pierceDamage)
+
+static func can_aim_at(mob:Mob, target:Tile):
+	if target in mob.LOS(false):
+		return true
+
+static func get_aim_mob_tiles(mob:Mob):
+	var result = []
+	for i in mob.LOS(false):
+		if mob.get_map()[i.x][i.y].m_mob!=null and  mob.get_map()[i.x][i.y].m_mob!=mob:
+			result.append(i)
+	return result
+	
+
+#######################
+#ACTIONS mobs can take#
+#######################
 
 static func move_horizontal(mob:Mob,move_vector:Vector3i,_move_mode:int = Move_Modes.WALK,calc:bool = false)->int:
 	var next_coord = Vector2i(HEX.add_2_3(mob.curr_c(),move_vector))
@@ -52,7 +103,7 @@ static func move_vertical(mob:Mob,move_vector:int,_move_mode:int = Move_Modes.WA
 		return 50
 	return 0#cant move there, fix this later
 	
-static func attack_phys(mob:Mob, target:Vector2i, calc:bool):
+static func attack_phys_melee(mob:Mob, target:Vector2i, calc:bool):
 	if not calc:
 		var targetMob = mob.get_map()[target.x][target.y].m_mob
 		if targetMob==null:
@@ -60,7 +111,7 @@ static func attack_phys(mob:Mob, target:Vector2i, calc:bool):
 		#TODO:calculate attack cost
 		var attack_cost:int = 25
 		
-		var toHit:int = mob.getAttr("melee") + (0 if mob.wield==null else mob.wield.to_hit)
+		var toHit:int = mob.getAttr("melee") +  mob.getAttr("perception") + (0 if mob.wield==null else mob.wield.to_hit) + 10
 		var DV:int = targetMob.getAttr("dodge")+ targetMob.getAttr("agility")
 		DEF.textBuffer+= str(toHit)+" vs "+str(DV)+"\n"
 		
@@ -83,55 +134,86 @@ static func attack_phys(mob:Mob, target:Vector2i, calc:bool):
 		var cut:int = 0
 		var pierce:int = 0
 		var skill:int = DEF.numToSkill(mob.attributes["melee"])
-		var attr:int = mob.attributes["strength"]
+		var attr:int = DEF.numToSkill(mob.attributes["agility"])
 		if(mob.wield==null):
 			blunt = attr * skill
 			pierce = attr * (skill/5)
 			cut = attr * (skill/10)
 		else:
-			blunt = mob.wield.blunt
-			cut = mob.wield.cut
-			pierce = mob.wield.pierce
-		var layerTough = 0
-		var layerHard = 0
-		var layerStrength = 0
-		for c in targetMob.worn:
-			layerTough += DEF.getProperty(DEF.mDefs,c.mat,&"toughness")
-			layerHard += DEF.getProperty(DEF.mDefs,c.mat,&"hardness")
-			layerStrength += DEF.getProperty(DEF.mDefs,c.mat,&"strength")
+			blunt = mob.wield.blunt + skill
+			cut = mob.wield.cut + skill + attr/2
+			pierce = mob.wield.pierce + skill + attr
 		
-		var bluntDamage = DEF.stdDist() * blunt
-		var pierceDamage = DEF.stdDist() * pierce
-		var cutDamage = DEF.stdDist() * cut
-		
-		if blunt:
-			#blunt bypasses hardness stop
-			if DEF.contest(bluntDamage,layerStrength)>0:
-				bluntDamage*=.5
-		if pierce:
-			#hardness stop blocks 100%
-			if DEF.contest(pierceDamage,layerHard)>0:
-				pierceDamage = 0
-			if DEF.contest(pierceDamage,layerStrength)>0:
-				pierceDamage *= .7
-		if cut:
-			#hardnes stop block 50%
-			if DEF.contest(cutDamage,layerHard)>0:
-				cutDamage *= .5
-			if DEF.contest(cutDamage,layerStrength)>0:
-				cutDamage *= .5
 			#TODO: cut causes bleed and clothing damage to less hard
-		var damageTotal = bluntDamage + pierceDamage + cutDamage
-		targetMob.change_hp(-damageTotal)
+			
+			
+		var damageNums = phys_penetration(targetMob,blunt,cut,pierce)
+		
 		if(targetMob==DEF.playerM):
 			DEF.textBuffer+="[color=dark_red]"
 		elif(mob==DEF.playerM):
 			DEF.textBuffer+="[color=Forest_green]"
 		else:
 			DEF.textBuffer+="[color=BEIGE]"
-		DEF.textBuffer+=(str(mob)+" dealt "+str(bluntDamage)+"/"+str(cutDamage)+"/"+str(pierceDamage)+"damage to "+str(targetMob)+"[/color]\n")
+		DEF.textBuffer+=(str(mob)+" dealt "+str(damageNums.y)+"/"+str(damageNums.z)+"/"+str(damageNums.w)+"damage to "+str(targetMob)+"[/color]\n")
 		next_hit_spark = targetMob.curr_c()
 	return 5
+
+static func attack_phys_ranged(mob:Mob, target:Tile, calc:bool):
+	if not calc:
+		var targetMob = target.m_mob
+		if targetMob==null:
+			return 0#no longer a target, refund
+		#TODO:calculate attack cost
+		var attack_cost:int = 50
+		
+		var toHit:int = mob.getAttr("ranged") + mob.getAttr("perception") + (0 if mob.wield==null else mob.wield.to_hit)
+		var DV:int = targetMob.getAttr("dodge")+ targetMob.getAttr("agility")
+		DEF.textBuffer+= str(toHit)+" vs "+str(DV)+"\n"
+		
+		mob.trainAttr("ranged",DV-toHit)
+		targetMob.trainAttr("dodge",toHit-DV)
+		if DEF.contest(toHit,DV)>0:
+			#attack missed, do miss handling
+			if(targetMob==DEF.playerM):
+				DEF.textBuffer+="[color=brown]"
+			elif(mob==DEF.playerM):
+				DEF.textBuffer+="[color=yellow]"
+			else:
+				DEF.textBuffer+="[color=BEIGE]"
+			DEF.textBuffer+=(str(mob)+"'s missile Misses the "+str(targetMob)+"[/color]\n")
+			return attack_cost / 2
+			
+			
+		#damage calculation on hit
+		var blunt:int = 0
+		var cut:int = 0
+		var pierce:int = 0
+		var skill:int = DEF.numToSkill(mob.attributes["ranged"])
+		var attr:int = DEF.numToSkill(mob.attributes["strength"])
+		if(mob.wield==null):
+			blunt = attr * skill
+			pierce = attr * (skill/5)
+			cut = attr * (skill/10)
+		else:
+			blunt = mob.wield.blunt + skill/2 + attr
+			cut = mob.wield.cut +skill
+			pierce = mob.wield.pierce + skill + attr
+			
+		var damageNums = phys_penetration(targetMob,blunt,cut,pierce)
+		
+		if(targetMob==DEF.playerM):
+			DEF.textBuffer+="[color=dark_red]"
+		elif(mob==DEF.playerM):
+			DEF.textBuffer+="[color=Forest_green]"
+		else:
+			DEF.textBuffer+="[color=BEIGE]"
+		DEF.textBuffer+=(str(mob)+"'s missile dealt "+str(damageNums.y)+"/"+str(damageNums.z)+"/"+str(damageNums.w)+"damage to "+str(targetMob)+"[/color]\n")
+		next_hit_spark = targetMob.curr_c()
+	return 5
+
+static func cast_spell(mob:Mob, target, spell_name:String, clalc:bool):
+	pass
 
 static func pickup(mob:Mob,toPickUp:Item, calc:bool, num = -1):
 	if not calc:
