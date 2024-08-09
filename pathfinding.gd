@@ -6,7 +6,7 @@ enum Astar_modes{
 	Normal,Agnostic,Tunnel
 }
 
-static func pathFind(start: Vector2i, goal: Vector2i, Map : Array, mode=Astar_modes.Normal) -> Array:
+static func pathFind(start: Vector3i, goal: Vector3i, Map : Array, mode=Astar_modes.Normal) -> Array:
 	var frontier = []
 	frontier.append(start)
 	var came_from = {}
@@ -23,11 +23,11 @@ static func pathFind(start: Vector2i, goal: Vector2i, Map : Array, mode=Astar_mo
 			break
 	
 		for next in HEX.get_surround(current):
-			next = Vector2i(next)
+			next = Vector3i(next)
 			if not DEF.isInChunk(next):
 				#tried to go outside bounds, skip tile
 				continue
-			var next_tile = Map[next.x][next.y]
+			var next_tile = Map[HEX.vec3_to_index(next)]
 			var cost_of_next
 			if mode == Astar_modes.Agnostic:
 				cost_of_next = 1
@@ -42,7 +42,7 @@ static func pathFind(start: Vector2i, goal: Vector2i, Map : Array, mode=Astar_mo
 			var new_cost = cost_so_far[current] + cost_of_next#need tilemap data here
 			if ((!cost_so_far.has(next)) or (new_cost < cost_so_far[next])):
 				cost_so_far[next] = new_cost
-				var priority = new_cost + HEX.cube_dist(HEX.oddr_to_axial(goal), HEX.oddr_to_axial(next)) -1
+				var priority = new_cost + HEX.cube_dist(goal, next) -1
 				c_priority[next] = priority
 				#insert new node in frontier,smallest priority to back
 				if(frontier.is_empty() or priority<=c_priority[frontier.back()]):

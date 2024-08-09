@@ -3,13 +3,13 @@ class_name Mob
 
 @export var name : String
 
-@export var world_c:Vector2i
-@export var dun_c:Vector2i
+@export var world_c:Vector3i
+@export var dun_c:Vector3i
 @export var d_level : int
 var list_of_mobs : Array
 var FOV = []
 @export var sight_range : int
-@export var target_tile : Vector2i = Vector2i(-1,-1)
+@export var target_tile : int#index of target tile HACK:fix this shit
 
 @export var time_u : int = 0
 @export var speed : int = 100
@@ -28,7 +28,7 @@ var FOV = []
 @export var hostile_to : int
 
 @export var tile_id:int
-@export var tile_coord:Vector2
+@export var atlas_coord:Vector2
 @export var tile_alt = 0
 
 var next_action = null
@@ -54,7 +54,7 @@ func _init(mob_name:String):
 	self.speed = DEF.getProperty(DEF.mob_dict,self.name,&"speed")
 	self.attributes = DEF.skill_dict[DEF.getProperty(DEF.mob_dict,self.name,&"skills")]
 	self.tile_id = DEF.getProperty(DEF.mob_dict,self.name,&"source")
-	self.tile_coord = Vector2i(DEF.getProperty(DEF.mob_dict,self.name,&"A_coord_x"),DEF.getProperty(DEF.mob_dict,self.name,&"A_coord_y"))
+	self.atlas_coord = Vector2(DEF.getProperty(DEF.mob_dict,self.name,&"A_coord_x"),DEF.getProperty(DEF.mob_dict,self.name,&"A_coord_y"))
 	self.factionStr = DEF.getProperty(DEF.mob_dict,self.name,&"faction")
 	self.faction = DEF.faction_dict[factionStr]
 	self.hostile_to = 0
@@ -85,9 +85,9 @@ func deSerialize(serialized:Dictionary):
 #deserializing
 	var parsed = serialized
 	_init(parsed["Mob"][0])
-	dun_c = Vector2i(HEX.strToVec(parsed["Mob"][1]))
+	dun_c = Vector3i(HEX.strToVec(parsed["Mob"][1]))
 	time_u = int(parsed["Mob"][2])
-	target_tile = Vector2i(HEX.strToVec(parsed["Mob"][3]))
+	target_tile = int(HEX.strToVec(parsed["Mob"][3]))
 	Hp = int(parsed["Mob"][4])
 	focus = int(parsed["Mob"][5])
 	
@@ -119,7 +119,7 @@ func set_self(Map:TileMap):
 func change_hp(delta:int):
 	set_hp(self.Hp+delta)	
 	
-func get_max_m_range():
+func get_max_melee_range():
 	if self.wield ==null:
 		return 1
 	return DEF.getProperty(DEF.sDefs,self.wield.shape,&"m_range")
@@ -137,16 +137,17 @@ func give_tu(turns:int):
 		var focus_delta = pow(rest_focus-focus,.6) if focus<rest_focus else -pow(abs(rest_focus-focus),.6)
 		focus += focus_delta
 
-func add_to_data(mob_list:Array, world_coord:Vector2i,hieght:int, coord:Vector2i = Vector2i(DEF.chunk_size/2,DEF.chunk_size/2)):
+func add_to_data(mob_list:Array, world_coord:Vector3i,hieght:int, coord:Vector3i = Vector3i(0,0,0)):
 	self.d_level = hieght
 	self.world_c = world_coord
 	self.dun_c = coord
-	DEF.current_map[curr_c().x][curr_c().y].m_mob = self
+	print(DEF.current_map)
+	DEF.current_map[HEX.vec3_to_index(curr_c())].m_mob = self
 	mob_list.append(self)
 	self.list_of_mobs = mob_list
 	
 func free_from_data():
-	DEF.current_map[curr_c().x][curr_c().y].m_mob = null
+	DEF.current_map[HEX.vec3_to_index(curr_c())].m_mob  = null
 	self.list_of_mobs.erase(self)
 
 func curr_c():
@@ -175,7 +176,7 @@ func get_access_items(dist:int = 1):
 	if wield!=null:
 		valid_items.append(wield)
 	for i in HEX.inRange(DEF.playerM.curr_c(),dist):
-		valid_items.append_array(DEF.current_map[i.x][i.y].i_items)
+		valid_items.append_array(DEF.current_map[HEX.vec3_to_index(curr_c())].i_items)
 	return valid_items
 
 func getAttr(attr:String):
@@ -200,22 +201,22 @@ func get_brain():
 			continue
 		if DEF.hasFlag(self.hostile_to,m.faction):
 			#if hostile to mob
-			if(HEX.oddr_dist(self.curr_c(),m.curr_c())<=self.sight_range):
+			if(HEX.cube_dist(self.curr_c(),m.curr_c())<=self.sight_range):
 				#if within sight range
 				var cansee:bool = true
 				#attempt sightLine
 				for i in HEX.inLine(self.curr_c(),m.curr_c()):
-					if DEF.current_map[i.x][i.y].get_v_cost()==-1:
+					if DEF.current_map[HEX.vec3_to_index(curr_c())].get_v_cost()==-1:
 						cansee = false
 						break
 				if cansee:
 					target_tile = m.curr_c()
 					break
-	var attack_range = get_max_m_range()
-	var target_dist = HEX.oddr_dist(self.curr_c(),target_tile)
-	if target_tile == Vector2i(-1,-1):
+	var attack_range = get_max_melee_range()
+	var target_dist = HEX.cube_dist(self.curr_c(),HEX.index_to_vec3(target_tile))
+	if target_tile == -1:
 		target_dist = 0
-	var target_mob = DEF.current_map[target_tile.x][target_tile.y].m_mob
+	var target_mob = DEF.current_map[target_tile].m_mob
 	if(target_dist==0):
 		#TODO:return to routine
 		next_action = func wait_lambda(_calc):
@@ -224,10 +225,10 @@ func get_brain():
 	elif(target_dist<=attack_range and target_mob!=null):
 		#TODO:attack with shortest range attack possible
 		next_action = func attack_lambda(calc):
-			return  ACT.attack_phys_melee(self,target_tile,calc)
+			return  ACT.attack_phys_melee(self,target_mob,calc)
 		return
 	else:
-		var next_step = PATH.pathFind(curr_c(),target_tile,DEF.current_map).back()
+		var next_step = PATH.pathFind(curr_c(),HEX.index_to_vec3(target_tile),DEF.current_map).back()
 		
 		next_action = func move_to_lambda(calc):
 			return  ACT.move_horizontal(self,HEX.get_c_vector(next_step,curr_c()),0,calc)
@@ -246,12 +247,13 @@ func get_map():
 	
 func die():
 	#drop loot
+	var current_idx = HEX.vec3_to_index(curr_c())
 	for i in items:
-		i.add_to_container(DEF.current_map[curr_c().x][curr_c().y].i_items,DEF.current_map[curr_c().x][curr_c().y])
+		i.add_to_container(DEF.current_map[current_idx].i_items,DEF.current_map[current_idx])
 	for i in worn:
-		i.add_to_container(DEF.current_map[curr_c().x][curr_c().y].i_items,DEF.current_map[curr_c().x][curr_c().y])
+		i.add_to_container(DEF.current_map[current_idx].i_items,DEF.current_map[current_idx])
 	if wield!=null:
-		wield.add_to_container(DEF.current_map[curr_c().x][curr_c().y].i_items,DEF.current_map[curr_c().x][curr_c().y])
+		wield.add_to_container(DEF.current_map[current_idx].i_items,DEF.current_map[current_idx])
 	free_from_data()
 
 func _to_string():
@@ -276,7 +278,7 @@ func LOS(setFov:bool = true):
 				break
 			if not canSee.has(j):
 				canSee.append(j)
-			var tile = DEF.current_map[j.x][j.y]
+			var tile = DEF.current_map[HEX.vec3_to_index(j)]
 			if tile.get_v_cost()==-1:
 				break
 	if setFov:

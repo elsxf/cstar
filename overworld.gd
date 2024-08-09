@@ -28,11 +28,12 @@ func do_LOS():
 	#set visible to seen
 	DEF.playerM.LOS()
 	for i in DEF.playerM.FOV:
-		DEF.current_map[i.x][i.y].known = DEF.vis_tile_names.Unseen
+		var tileIdx = HEX.vec3_to_index(i)
+		DEF.current_map[tileIdx].known = DEF.vis_tile_names.Unseen
 		#force redraw of tile contents
 		$Map.set_cell(DEF.Layer_Names.Mobs,i,-1)
 		$Map.set_cell(DEF.Layer_Names.Items,i,-1)
-		DEF.current_map[i.x][i.y].draw_contents($Map, i)
+		DEF.current_map[tileIdx].draw_contents($Map, i)
 		$Map.set_cell(DEF.Layer_Names.Vis,i,vis_hex,Vector2(0,0),seen_hex)
 		
 
@@ -141,10 +142,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			pass
 		"auto":
 			for i in HEX.inRange(DEF.playerM.curr_c(), DEF.playerM.get_max_m_range()):
-				if DEF.current_map[i.x][i.y].m_mob==DEF.playerM:
+				var tileIdx = HEX.vec3_to_index(i)
+				if DEF.current_map[tileIdx].m_mob==DEF.playerM:
 					continue
-				if DEF.current_map[i.x][i.y].m_mob!=null:
-					if DEF.hasFlag(DEF.current_map[i.x][i.y].m_mob.hostile_to, DEF.playerM.faction):
+				if DEF.current_map[tileIdx].m_mob!=null:
+					if DEF.hasFlag(DEF.current_map[tileIdx].m_mob.hostile_to, DEF.playerM.faction):
 						next_action = func attack_p_lambda(calc):
 							return ACT.attack_phys_melee(DEF.playerM,i,calc)
 						break
@@ -168,7 +170,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		"pickup":
 			var valid_items = []
 			for i in HEX.inRange(DEF.playerM.curr_c(),1):
-				valid_items.append_array(DEF.current_map[i.x][i.y].i_items)
+				valid_items.append_array(DEF.current_map[HEX.vec3_to_index(i)].i_items)
 			match valid_items.size():
 				0:
 					DEF.textBuffer+="nothing to pick up\n"
@@ -213,13 +215,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			for i in HEX.inRange(DEF.playerM.curr_c(),1):
 				if not DEF.isInChunk(i):
 					continue
-				if not DEF.current_map[i.x][i.y].f_name.is_empty():
+				if not DEF.current_map[HEX.vec3_to_index(i)].f_name.is_empty():
 					validTiles.append(i)
 			match validTiles.size():
 				0:
 					DEF.textBuffer+="[color=brown]nothing to harvest![/color]\n"
 				1:
-					var toHarvest = DEF.current_map[validTiles[0].x][validTiles[0].y]
+					var toHarvest = DEF.current_map[HEX.vec3_to_index(validTiles[0])]
 					next_action= func harvest_lambda(calc):
 						return ACT.harvest(toHarvest, calc)
 				_:
@@ -227,24 +229,29 @@ func _unhandled_input(event: InputEvent) -> void:
 						$Map.set_cell(DEF.Layer_Names.Highlight,i, 22, Vector2i(0, 0))
 					var choice = await $HUD/menus/Popup.popVector("Harvest Where?")
 					if choice!=null:
-						var target = HEX.add_2_3(DEF.playerM.curr_c(),choice)
+						var target = DEF.playerM.curr_c()+choice
 						next_action = func Harvest_lambda(calc):
-							return ACT.harvest(DEF.current_map[target.x][target.y],calc)
+							return ACT.harvest(DEF.current_map[HEX.vec3_to_index(target)],calc)
 		"smash":
 			var choice = await $HUD/menus/Popup.popVector("Smash Where?")
 			if choice!=null:
 				var target =HEX.add_2_3(DEF.playerM.curr_c(),choice)
 				next_action = func onChoice_lambda(calc):
-					var result = ACT.smash(DEF.current_map[target.x][target.y],calc)
-					DEF.current_map[target.x][target.y].set_self($Map,target)
+					var tileIdx = HEX.vec3_to_index(target)
+					var result = ACT.smash(DEF.current_map[tileIdx],calc)
+					DEF.current_map[tileIdx].set_self($Map,target)
 					return result
 
 	$Map.clear_layer(DEF.Layer_Names.Highlight)
 	if(horiz_vector!=null):
-		var target_loc =Vector2i(HEX.add_2_3(DEF.playerM.curr_c(),horiz_vector))
-		var target_tile
+		var target_loc = DEF.playerM.curr_c()+horiz_vector
 		if(DEF.isInChunk(target_loc) or DEF.playerM.d_level==-1):
-			target_tile = DEF.current_map[target_loc.x%DEF.chunk_size][target_loc.y%DEF.chunk_size]
+			if not DEF.isInChunk(target_loc):#wraparound
+				target_loc.x = -DEF.chunk_size * sign(target_loc.x) if abs(target_loc.x)>DEF.chunk_size else target_loc.x
+				target_loc.y = -DEF.chunk_size * sign(target_loc.y) if abs(target_loc.y)>DEF.chunk_size else target_loc.y
+				target_loc.z = -DEF.chunk_size * sign(target_loc.z) if abs(target_loc.z)>DEF.chunk_size else target_loc.x
+			var targetIdx = HEX.vec3_to_index(target_loc)
+			var target_tile = DEF.current_map[targetIdx]
 			if(target_tile.m_mob==null):
 				next_action = func move_horizontal_lambda(calc):
 					return ACT.move_horizontal(DEF.playerM,horiz_vector,0,calc)

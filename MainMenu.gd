@@ -17,28 +17,8 @@ func begin_game():
 	queue_free()
 
 func _on_new_pressed() -> void:
-	#newgame stuff
-	DEF.playerM = Mob.new("Player")
-	
-	Item.new("Wood","Sword").add_to_container(DEF.playerM.items,DEF.playerM)
-	Item.new("Stone","Sword").add_to_container(DEF.playerM.items,DEF.playerM)
-	Item.new("Metal","Sword").add_to_container(DEF.playerM.items,DEF.playerM)
-	Item.new("Wood","Spear").add_to_container(DEF.playerM.items,DEF.playerM)
-	Item.new("Stone","Spear").add_to_container(DEF.playerM.items,DEF.playerM)
-	Item.new("Metal","Spear").add_to_container(DEF.playerM.items,DEF.playerM)
-	DEF.playerM.wield = Item.new("Wood","Bow")
-	
-	GEN.init_random()
-	
-	GEN.gen_overworld(Vector2(0,0))
-	DEF.playerM.add_to_data(DEF.current_mobs,Vector2i(DEF.chunk_size/2,DEF.chunk_size/2),-1)
-	DEF.saveState[DEF.SAVE_OVERWORLD] = DEF.save_chunk()
-	
-	DEF.current_coords=null
-	DEF.current_level=-1
-	
-	
-	begin_game()
+	DEF.create_save_file()
+	_on_load_pressed()
 	pass # Replace with function body.
 
 

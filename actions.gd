@@ -99,33 +99,32 @@ static func move_vertical(mob:Mob,move_vector:int,_move_mode:int = Move_Modes.WA
 			DEF.change_map()
 			#$Player.FOV = []
 			if(mob.d_level==-1):
-				mob.dun_c= Vector2i(DEF.chunk_size/2,DEF.chunk_size/2)
+				mob.dun_c= Vector3i(0,0,0)
 		return 50
 	return 0#cant move there, fix this later
 	
-static func attack_phys_melee(mob:Mob, target:Vector2i, calc:bool):
+static func attack_phys_melee(mob:Mob, target:Mob, calc:bool):
 	if not calc:
-		var targetMob = mob.get_map()[target.x][target.y].m_mob
-		if targetMob==null:
+		if HEX.cube_dist(mob.curr_c(),target.curr_c())>mob.get_max_melee_range():
 			return 0#no longer a target, refund
 		#TODO:calculate attack cost
 		var attack_cost:int = 25
 		
 		var toHit:int = mob.getAttr("melee") +  mob.getAttr("perception") + (0 if mob.wield==null else mob.wield.to_hit) + 10
-		var DV:int = targetMob.getAttr("dodge")+ targetMob.getAttr("agility")
+		var DV:int = target.getAttr("dodge")+ target.getAttr("agility")
 		DEF.textBuffer+= str(toHit)+" vs "+str(DV)+"\n"
 		
 		mob.trainAttr("melee",DV-toHit)
-		targetMob.trainAttr("dodge",toHit-DV)
+		target.trainAttr("dodge",toHit-DV)
 		if DEF.contest(toHit,DV)>0:
 			#attack missed, do miss handling
-			if(targetMob==DEF.playerM):
+			if(target==DEF.playerM):
 				DEF.textBuffer+="[color=brown]"
 			elif(mob==DEF.playerM):
 				DEF.textBuffer+="[color=yellow]"
 			else:
 				DEF.textBuffer+="[color=BEIGE]"
-			DEF.textBuffer+=(str(mob)+" Misses the "+str(targetMob)+"[/color]\n")
+			DEF.textBuffer+=(str(mob)+" Misses the "+str(target)+"[/color]\n")
 			return attack_cost / 2
 			
 			
@@ -147,16 +146,16 @@ static func attack_phys_melee(mob:Mob, target:Vector2i, calc:bool):
 			#TODO: cut causes bleed and clothing damage to less hard
 			
 			
-		var damageNums = phys_penetration(targetMob,blunt,cut,pierce)
+		var damageNums = phys_penetration(target,blunt,cut,pierce)
 		
-		if(targetMob==DEF.playerM):
+		if(target==DEF.playerM):
 			DEF.textBuffer+="[color=dark_red]"
 		elif(mob==DEF.playerM):
 			DEF.textBuffer+="[color=Forest_green]"
 		else:
 			DEF.textBuffer+="[color=BEIGE]"
-		DEF.textBuffer+=(str(mob)+" dealt "+str(damageNums.y)+"/"+str(damageNums.z)+"/"+str(damageNums.w)+"damage to "+str(targetMob)+"[/color]\n")
-		next_hit_spark = targetMob.curr_c()
+		DEF.textBuffer+=(str(mob)+" dealt "+str(damageNums.y)+"/"+str(damageNums.z)+"/"+str(damageNums.w)+"damage to "+str(target)+"[/color]\n")
+		next_hit_spark = target.curr_c()
 	return 5
 
 static func attack_phys_ranged(mob:Mob, target:Tile, calc:bool):
@@ -222,7 +221,7 @@ static func pickup(mob:Mob,toPickUp:Item, calc:bool, num = -1):
 	
 static func drop(mob:Mob,toDrop:Item,calc:bool, num = -1):
 	if not calc:
-		var tile:Tile = mob.get_map()[mob.curr_c().x][mob.curr_c().y]
+		var tile:Tile = mob.get_map()[HEX.vec3_to_index(mob.curr_c())]
 		toDrop.transfer_to_container(tile,tile.i_items,num)
 	return 10
 

@@ -11,7 +11,7 @@ enum T_data_cols{
 	Scource,Coord,Alt,M_Cost,V_Cost
 }
 
-static var chunk_size = 64
+static var chunk_size = 25
 static var tile_scale = Vector2i(2,2)
 
 static var json_was_processed : bool = false
@@ -66,7 +66,7 @@ static var saveState ={
 
 
 static var current_level:int = -1
-static var current_coords = Vector2i(32,32)
+static var current_coords = Vector3i(0,0,0)
 static var current_map = []
 static var current_mobs = []
 	
@@ -77,8 +77,7 @@ static func save_chunk():
 	var savingMap = current_map.duplicate(true)
 	var savingMobs = current_mobs.duplicate(true)
 	for i in savingMap.size():
-		for j in savingMap[i].size():
-			savingMap[i][j]= savingMap[i][j].serialize()
+		savingMap[i] = savingMap[i].serialize()
 	for i in savingMobs.size():
 		savingMobs[i] = savingMobs[i].serialize()
 	save["Map"]=(savingMap)
@@ -87,8 +86,7 @@ static func save_chunk():
 
 static func load_chunk(data):
 	for i in data["Map"].size():
-		for j in data["Map"][i].size():
-			current_map[i][j].deSerialize(data["Map"][i][j])
+		current_map[i].deSerialize(data["Map"][i])
 	current_mobs = []
 	for i in data["Mobs"]:
 		var m = Mob.new("default")
@@ -129,7 +127,7 @@ static func change_map():
 			print("generating area at ", playerM.curr_c())
 			#need to generate area
 			if(playerM.d_level==0):
-				current_mobs = GEN.gen_surface(playerM.world_c,current_map[playerM.world_c.x][playerM.world_c.y])[1]
+				current_mobs = GEN.gen_surface(playerM.world_c,current_map[HEX.vec3_to_index(playerM.world_c)])[1]
 			else:
 				current_mobs = GEN.gen_dungeon(playerM.world_c,playerM.curr_c())[1]
 			load_chunk(save_chunk())
@@ -140,6 +138,28 @@ static func change_map():
 		current_coords=null
 	else:
 		current_coords=playerM.world_c
+
+static func create_save_file():
+	#newgame stuff
+	DEF.playerM = Mob.new("Player")
+	
+	Item.new("Wood","Sword").add_to_container(DEF.playerM.items,DEF.playerM)
+	Item.new("Stone","Sword").add_to_container(DEF.playerM.items,DEF.playerM)
+	Item.new("Metal","Sword").add_to_container(DEF.playerM.items,DEF.playerM)
+	Item.new("Wood","Spear").add_to_container(DEF.playerM.items,DEF.playerM)
+	Item.new("Stone","Spear").add_to_container(DEF.playerM.items,DEF.playerM)
+	Item.new("Metal","Spear").add_to_container(DEF.playerM.items,DEF.playerM)
+	DEF.playerM.wield = Item.new("Wood","Bow")
+	
+	GEN.init_random()
+	
+	GEN.gen_overworld(Vector3i(0,0,0))
+	DEF.playerM.add_to_data(DEF.current_mobs,Vector3i(0,0,0),-1)
+	DEF.saveState[DEF.SAVE_OVERWORLD] = DEF.save_chunk()
+	
+	DEF.current_coords=null
+	DEF.current_level=-1
+	save_to_file()
 
 static func save_to_file():
 	var Fopen = FileAccess.open("saveGame.sav",FileAccess.WRITE)
@@ -164,12 +184,9 @@ static func load_from_file():
 	GEN.init_random(saveState["seed"])
 	DEF.current_coords= playerM.dun_c if playerM.d_level!=-1 else null
 	DEF.current_level=playerM.d_level
-	DEF.current_map.resize(DEF.chunk_size)
+	DEF.current_map.resize(HEX.numSpiral(DEF.chunk_size))
 	for i in current_map.size():
-		current_map[i]=[]
-		current_map[i].resize(DEF.chunk_size)
-		for j in current_map[i].size():
-			current_map[i][j] = Tile.new()
+		current_map[i] = Tile.new()
 	if playerM.d_level==-1:
 		load_chunk(saveState[SAVE_OVERWORLD])
 	else:
@@ -351,8 +368,8 @@ static func lambdaStr(itemList:Array, ListLambda)->String:
 		result+=str(ListLambda.call(i))+"\n"
 	return result
 
-static func isInChunk(coord:Vector2i) -> bool:
-	return not (coord.x>=chunk_size or coord.y>=chunk_size or coord.x<0 or coord.y<0)
+static func isInChunk(coord:Vector3i) -> bool:
+	return HEX.cube_dist(coord,Vector3i(0,0,0))<=chunk_size
 	
 static func evtMatch(event:InputEvent,character:String):
 	return char(event.unicode)==character
