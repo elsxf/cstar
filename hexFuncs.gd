@@ -46,6 +46,10 @@ static func strToVec(vecStr):
 		_:
 			return vecStr
 
+static func validate_cube(unVal:Vector3):
+	var validated = Vector3i(unVal.x,unVal.y,-unVal.x-unVal.y)
+	return validated
+
 static func axial_round(frac:Vector3)->Vector3i:
 	var q = snapped(frac.x,1)
 	var r = snapped(frac.y,1)
@@ -76,7 +80,7 @@ static func inRange(src: Vector3i, n: int)->Array:#every tile(coord) within n st
 	var results = []
 	for q in range(-n,n+1,1):
 		for r in range(max(-n,-q-n),min(n,-q+n)+1,1):
-			results.append(axial_to_oddr(center + Vector3i(q,r,-q-r)))
+			results.append(center + Vector3i(q,r,-q-r))
 	return results
 
 static func get_surround(src:Vector3i)->Array:
@@ -177,5 +181,5 @@ static func inLine(start: Vector3i, end:Vector3i)->Array:#tiles(coord) in line
 	var results = []
 	var n = cube_dist(a,b)
 	for i in range(n+1):
-		results.append(axial_to_oddr(axial_round(cube_lerp(a, b, 1.0/n * i))))
+		results.append(axial_round(cube_lerp(a, b, 1.0/n * i)))
 	return results

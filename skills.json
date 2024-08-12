@@ -6,6 +6,7 @@
 		"intelligence":200,
 		
 		"melee":50,
+		"ranged":50,
 		"dodge":50,
 		"blunt":0,
 		"cut":0,
@@ -16,6 +17,7 @@
 		"agility":600,
 		"perception":600,
 		"intelligence":600,
+		"ranged":500,
 		"melee":600,
 		"dodge":600,
 		"blunt":400,

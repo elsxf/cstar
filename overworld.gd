@@ -9,9 +9,9 @@ var zoomMin = .25
 var zoomMax = 4
 
 
-func hitSpark(tile:Vector2i):
+func hitSpark(tile:Vector3i):
 	var inst = hitSparkRes.instantiate()
-	inst.position = hex_to_pixel(tile)
+	inst.position = hex_to_pixel(HEX.axial_to_oddr(tile))
 	inst.emitting = true
 	$HUD.add_child(inst)
 	ACT.next_hit_spark=null
@@ -22,25 +22,27 @@ func do_LOS():
 	var unseen_hex = DEF.vis_t_dat[DEF.vis_tile_names.Unseen][DEF.T_data_cols.Alt]
 	var seen_hex = DEF.vis_t_dat[DEF.vis_tile_names.Seen][DEF.T_data_cols.Alt]
 	for i in DEF.playerM.FOV:
-		$Map.set_cell(DEF.Layer_Names.Vis,i,vis_hex,Vector2(0,0),unseen_hex)
-		$Map.set_cell(DEF.Layer_Names.Mobs,i,-1)
-		$Map.set_cell(DEF.Layer_Names.Items,i,-1)
+		var tMapCoord = HEX.axial_to_oddr(i)
+		$Map.set_cell(DEF.Layer_Names.Vis,tMapCoord,vis_hex,Vector2(0,0),unseen_hex)
+		$Map.set_cell(DEF.Layer_Names.Mobs,tMapCoord,-1)
+		$Map.set_cell(DEF.Layer_Names.Items,tMapCoord,-1)
 	#set visible to seen
 	DEF.playerM.LOS()
 	for i in DEF.playerM.FOV:
 		var tileIdx = HEX.vec3_to_index(i)
+		var tMapCoord = HEX.axial_to_oddr(i)
 		DEF.current_map[tileIdx].known = DEF.vis_tile_names.Unseen
 		#force redraw of tile contents
-		$Map.set_cell(DEF.Layer_Names.Mobs,i,-1)
-		$Map.set_cell(DEF.Layer_Names.Items,i,-1)
+		$Map.set_cell(DEF.Layer_Names.Mobs,tMapCoord,-1)
+		$Map.set_cell(DEF.Layer_Names.Items,tMapCoord,-1)
 		DEF.current_map[tileIdx].draw_contents($Map, i)
-		$Map.set_cell(DEF.Layer_Names.Vis,i,vis_hex,Vector2(0,0),seen_hex)
+		$Map.set_cell(DEF.Layer_Names.Vis,tMapCoord,vis_hex,Vector2(0,0),seen_hex)
 		
 
 		
 
 func offset_map():#centers map on player
-	var mapOffset = Vector2(-DEF.playerM.curr_c())
+	var mapOffset = Vector2(-HEX.axial_to_oddr(DEF.playerM.curr_c()))
 	mapOffset.x-=float(absi(mapOffset.y)%2) /2
 	mapOffset*=Vector2($Map.tile_set.tile_size)*$Map.scale
 	mapOffset.y=(mapOffset.y*3)/4
@@ -141,14 +143,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			$HUD/menus/Popup.popChoice("Apply what?", DEF.playerM.get_access_items(), true, onChoice)
 			pass
 		"auto":
-			for i in HEX.inRange(DEF.playerM.curr_c(), DEF.playerM.get_max_m_range()):
+			for i in HEX.inRange(DEF.playerM.curr_c(), DEF.playerM.get_max_melee_range()):
 				var tileIdx = HEX.vec3_to_index(i)
 				if DEF.current_map[tileIdx].m_mob==DEF.playerM:
 					continue
 				if DEF.current_map[tileIdx].m_mob!=null:
 					if DEF.hasFlag(DEF.current_map[tileIdx].m_mob.hostile_to, DEF.playerM.faction):
 						next_action = func attack_p_lambda(calc):
-							return ACT.attack_phys_melee(DEF.playerM,i,calc)
+							return ACT.attack_phys_melee(DEF.playerM,DEF.current_map[tileIdx].m_mob,calc)
 						break
 			if next_action == null:
 				DEF.textBuffer+="[color=brown]Nothing to attack\n[/color]"
@@ -159,12 +161,14 @@ func _unhandled_input(event: InputEvent) -> void:
 				DEF.textBuffer += "[color=BROWN]can't fire current weapon!\n[/color]"
 			else:
 				var choices = ACT.get_aim_mob_tiles(DEF.playerM)
+				var chosen:Mob
 				match choices.size():
 					0:
 						DEF.textBuffer += "[color=BROWN]nothing to fire at!\n[/color]"
 					1:
+						chosen = choices[0].m_mob
 						next_action = func fire_lambda(calc):
-							return ACT.attack_phys_ranged(DEF.playerM,choices[0],calc)
+							return ACT.attack_phys_ranged(DEF.playerM,chosen,calc)
 					_:
 						pass
 		"pickup":
@@ -226,7 +230,7 @@ func _unhandled_input(event: InputEvent) -> void:
 						return ACT.harvest(toHarvest, calc)
 				_:
 					for i in validTiles:
-						$Map.set_cell(DEF.Layer_Names.Highlight,i, 22, Vector2i(0, 0))
+						$Map.set_cell(DEF.Layer_Names.Highlight,HEX.axial_to_oddr(i), 22, Vector2i(0, 0))
 					var choice = await $HUD/menus/Popup.popVector("Harvest Where?")
 					if choice!=null:
 						var target = DEF.playerM.curr_c()+choice
@@ -247,17 +251,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		var target_loc = DEF.playerM.curr_c()+horiz_vector
 		if(DEF.isInChunk(target_loc) or DEF.playerM.d_level==-1):
 			if not DEF.isInChunk(target_loc):#wraparound
+				print(target_loc)
 				target_loc.x = -DEF.chunk_size * sign(target_loc.x) if abs(target_loc.x)>DEF.chunk_size else target_loc.x
 				target_loc.y = -DEF.chunk_size * sign(target_loc.y) if abs(target_loc.y)>DEF.chunk_size else target_loc.y
-				target_loc.z = -DEF.chunk_size * sign(target_loc.z) if abs(target_loc.z)>DEF.chunk_size else target_loc.x
+				target_loc.z = -DEF.chunk_size * sign(target_loc.z) if abs(target_loc.z)>DEF.chunk_size else target_loc.z
 			var targetIdx = HEX.vec3_to_index(target_loc)
 			var target_tile = DEF.current_map[targetIdx]
 			if(target_tile.m_mob==null):
 				next_action = func move_horizontal_lambda(calc):
-					return ACT.move_horizontal(DEF.playerM,horiz_vector,0,calc)
+					return ACT.move_horizontal(DEF.playerM,target_tile,0,calc)
 			else:
 				next_action = func attack_p_lambda(calc):
-					return ACT.attack_phys_melee(DEF.playerM,target_loc,calc)
+					return ACT.attack_phys_melee(DEF.playerM,target_tile.m_mob,calc)
 					
 	if(vert_vector!=null):
 		next_action = func move_vertical_lambda(calc):
@@ -278,10 +283,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		#$SightLine.add_point(scrnCnt(),1)
 	if event is InputEventMouseButton:
 		$Map.clear_layer(DEF.Layer_Names.Highlight)
-		var path = PATH.pathFind(m_tile,DEF.playerM.curr_c(),DEF.current_map)
+		var path = PATH.pathFind(HEX.oddr_to_axial(m_tile),DEF.playerM.curr_c(),DEF.current_map)
 		if (path!=null):
 			for i in path:
-				$Map.set_cell(DEF.Layer_Names.Highlight,i,1,Vector2i(0,0))
+				$Map.set_cell(DEF.Layer_Names.Highlight,HEX.axial_to_oddr(i),1,Vector2i(0,0))
 	$Map.scale = DEF.tile_scale*zoomScale
 	offset_map()
 
@@ -339,10 +344,8 @@ func _on_Player_action_taken():
 
 func _on_HUD_set_map(mapArray):
 	$Map.clear()
-	#for i in $Map.get_used_cells(0):
-		#print("hello")
-		#$Map.set_cell(DEF.Layer_Names.Vis,i,DEF.vis_t_dat[DEF.vis_tile_names.Unknown][DEF.T_data_cols.Scource],Vector2i(0,0),DEF.vis_t_dat[DEF.vis_tile_names.Unknown][DEF.T_data_cols.Alt])
-	for i in range(DEF.chunk_size):
-		for j in range(DEF.chunk_size):
-			mapArray[i][j].set_self(%Map,Vector2i(i,j))
-	BetterTerrain.update_terrain_area($Map, DEF.Layer_Names.Terrain, Rect2i(0,0,DEF.chunk_size,DEF.chunk_size), true)
+	var rad = HEX.idx_to_rad(mapArray.size())-1
+	var spiral = HEX.inSpiral(Vector3i(0,0,0),rad)
+	for i in spiral.size():
+		mapArray[i].set_self(%Map,spiral[i])
+	BetterTerrain.update_terrain_area($Map, DEF.Layer_Names.Terrain, Rect2i(-DEF.chunk_size*2,-DEF.chunk_size*2,DEF.chunk_size*2,DEF.chunk_size*2), true)

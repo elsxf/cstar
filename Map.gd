@@ -3,7 +3,8 @@ extends TileMap
 
 
 func _tile_data_runtime_update(layer: int, coords: Vector2i, tile_data: TileData):
-	var currTile = DEF.current_map[HEX.vec2_to_index(coords)]
+	var actual_coord = HEX.oddr_to_axial(coords)
+	var currTile = DEF.current_map[HEX.vec3_to_index(actual_coord)]
 	match layer:
 		DEF.Layer_Names.Mobs:
 			var tileMob = currTile.m_mob

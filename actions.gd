@@ -41,15 +41,16 @@ static func phys_penetration(target:Mob, blunt:int, cut:int,pierce:int)->Vector4
 	target.change_hp(-damageTotal)
 	return Vector4i(damageTotal,bluntDamage,cutDamage,pierceDamage)
 
-static func can_aim_at(mob:Mob, target:Tile):
-	if target in mob.LOS(false):
+static func can_aim_at(mob:Mob, target:Mob):
+	if target.curr_c() in mob.LOS(false):
 		return true
 
 static func get_aim_mob_tiles(mob:Mob):
 	var result = []
 	for i in mob.LOS(false):
-		if mob.get_map()[i.x][i.y].m_mob!=null and  mob.get_map()[i.x][i.y].m_mob!=mob:
-			result.append(i)
+		var map_idx = HEX.vec3_to_index(i)
+		if mob.get_map()[map_idx].m_mob!=null and  mob.get_map()[map_idx].m_mob!=mob:
+			result.append(mob.get_map()[map_idx])
 	return result
 	
 
@@ -57,44 +58,40 @@ static func get_aim_mob_tiles(mob:Mob):
 #ACTIONS mobs can take#
 #######################
 
-static func move_horizontal(mob:Mob,move_vector:Vector3i,_move_mode:int = Move_Modes.WALK,calc:bool = false)->int:
-	var next_coord = Vector2i(HEX.add_2_3(mob.curr_c(),move_vector))
-
-	if(DEF.isInChunk(next_coord) or mob.d_level==-1):
-		next_coord.x = (next_coord.x+DEF.chunk_size)%DEF.chunk_size
-		next_coord.y = (next_coord.y+DEF.chunk_size)%DEF.chunk_size
-		var next_tile = mob.get_map()[next_coord.x][next_coord.y]
-		var next_tile_cost = next_tile.get_m_cost()
-		if next_tile_cost>=0:
-			if next_tile.m_mob==null:#TODO: switch with friendly
-				if not calc:
-					DEF.textBuffer+=(str(mob)+" moved to "+str(next_coord)+"\n")
-					#actually move mob
-					#remove old tile assignment
-					mob.get_map()[mob.curr_c().x][mob.curr_c().y].m_mob=null
-					if(mob.d_level==-1):
-						mob.world_c=next_coord
-						#print($Player.world_c)
-					else:
-						mob.dun_c=next_coord
-						#print($Player.dun_c)
-					mob.get_map()[mob.curr_c().x][mob.curr_c().y].m_mob=mob
-					match mob.get_map()[mob.curr_c().x][mob.curr_c().y].i_items.size():
-						0:
-							pass
-						1:
-							DEF.textBuffer+="You see here"+str( mob.get_map()[mob.curr_c().x][mob.curr_c().y].i_items[0])
-						_:
-							DEF.textBuffer+="You see here"+str( mob.get_map()[mob.curr_c().x][mob.curr_c().y].i_items[0]) + " and many more items"
-				#TU cost of action
-			return next_tile_cost * 50
+static func move_horizontal(mob:Mob,target_tile:Tile,_move_mode:int = Move_Modes.WALK,calc:bool = false)->int:
+	var curr_idx = HEX.vec3_to_index(mob.curr_c())
+	var next_tile_cost = target_tile.get_m_cost()
+	if next_tile_cost>=0:
+		if target_tile.m_mob==null:#TODO: switch with friendly
+			if not calc:
+				DEF.textBuffer+=(str(mob)+" moved to "+str(target_tile.coord)+"\n")
+				#actually move mob
+				#remove old tile assignment
+				mob.get_map()[curr_idx].m_mob=null
+				if(mob.d_level==-1):
+					mob.world_c=target_tile.coord
+					#print($Player.world_c)
+				else:
+					mob.dun_c=target_tile.coord
+					#print($Player.dun_c)
+				target_tile.m_mob=mob
+				match target_tile.i_items.size():
+					0:
+						pass
+					1:
+						DEF.textBuffer+="You see here"+str(target_tile.i_items[0])
+					_:
+						DEF.textBuffer+="You see here"+str( target_tile.i_items[0]) + " and many more items"
+			#TU cost of action
+		return next_tile_cost * 50
 	return 0#cant move there, fix this later
 	
 static func move_vertical(mob:Mob,move_vector:int,_move_mode:int = Move_Modes.WALK,calc:bool = false)->int:	
-	var curr_feature = mob.get_map()[mob.curr_c().x][mob.curr_c().y].f_name
+	var curr_idx = HEX.vec3_to_index(mob.curr_c())
+	var curr_feature = mob.get_map()[curr_idx].f_name
 	if( ((curr_feature==&"DownStair" or mob.d_level==-1) and move_vector==1) or ((curr_feature==&"UpStair" or mob.d_level==0) and move_vector==-1)):
 		if not calc:
-			mob.get_map()[mob.curr_c().x][mob.curr_c().y].m_mob=null
+			mob.get_map()[curr_idx].m_mob=null
 			mob.d_level+=move_vector
 			DEF.change_map()
 			#$Player.FOV = []
@@ -158,29 +155,28 @@ static func attack_phys_melee(mob:Mob, target:Mob, calc:bool):
 		next_hit_spark = target.curr_c()
 	return 5
 
-static func attack_phys_ranged(mob:Mob, target:Tile, calc:bool):
+static func attack_phys_ranged(mob:Mob, target:Mob, calc:bool):
+	if not can_aim_at(mob,target):
+		return 0#no longer a target, refund
 	if not calc:
-		var targetMob = target.m_mob
-		if targetMob==null:
-			return 0#no longer a target, refund
 		#TODO:calculate attack cost
 		var attack_cost:int = 50
 		
 		var toHit:int = mob.getAttr("ranged") + mob.getAttr("perception") + (0 if mob.wield==null else mob.wield.to_hit)
-		var DV:int = targetMob.getAttr("dodge")+ targetMob.getAttr("agility")
+		var DV:int = target.getAttr("dodge")+ target.getAttr("agility")
 		DEF.textBuffer+= str(toHit)+" vs "+str(DV)+"\n"
 		
 		mob.trainAttr("ranged",DV-toHit)
-		targetMob.trainAttr("dodge",toHit-DV)
+		target.trainAttr("dodge",toHit-DV)
 		if DEF.contest(toHit,DV)>0:
 			#attack missed, do miss handling
-			if(targetMob==DEF.playerM):
+			if(target==DEF.playerM):
 				DEF.textBuffer+="[color=brown]"
 			elif(mob==DEF.playerM):
 				DEF.textBuffer+="[color=yellow]"
 			else:
 				DEF.textBuffer+="[color=BEIGE]"
-			DEF.textBuffer+=(str(mob)+"'s missile Misses the "+str(targetMob)+"[/color]\n")
+			DEF.textBuffer+=(str(mob)+"'s missile Misses the "+str(target)+"[/color]\n")
 			return attack_cost / 2
 			
 			
@@ -199,16 +195,16 @@ static func attack_phys_ranged(mob:Mob, target:Tile, calc:bool):
 			cut = mob.wield.cut +skill
 			pierce = mob.wield.pierce + skill + attr
 			
-		var damageNums = phys_penetration(targetMob,blunt,cut,pierce)
+		var damageNums = phys_penetration(target,blunt,cut,pierce)
 		
-		if(targetMob==DEF.playerM):
+		if(target==DEF.playerM):
 			DEF.textBuffer+="[color=dark_red]"
 		elif(mob==DEF.playerM):
 			DEF.textBuffer+="[color=Forest_green]"
 		else:
 			DEF.textBuffer+="[color=BEIGE]"
-		DEF.textBuffer+=(str(mob)+"'s missile dealt "+str(damageNums.y)+"/"+str(damageNums.z)+"/"+str(damageNums.w)+"damage to "+str(targetMob)+"[/color]\n")
-		next_hit_spark = targetMob.curr_c()
+		DEF.textBuffer+=(str(mob)+"'s missile dealt "+str(damageNums.y)+"/"+str(damageNums.z)+"/"+str(damageNums.w)+"damage to "+str(target)+"[/color]\n")
+		next_hit_spark = target.curr_c()
 	return 5
 
 static func cast_spell(mob:Mob, target, spell_name:String, clalc:bool):

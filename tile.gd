@@ -8,6 +8,8 @@ var feature_data
 @export var m_mob : Mob
 @export var i_items : Array
 @export var known : int = DEF.vis_tile_names.Unknown
+var coord : Vector3i
+var idx : int
 #@export var i_items : Array
 
 func _init(terrain_name:StringName = &"Deep_Water", feature:StringName = &"",mob:Mob=null,items : Array = []):
@@ -44,25 +46,29 @@ func deSerialize(serialStr):
 		
 
 
-func set_self(Map:TileMap, coord:Vector2i):#call only once and before terrain connect
+func set_self(Map:TileMap, world_coord:Vector3i):#call only once and before terrain connect
+	self.coord = world_coord
+	self.idx = HEX.vec3_to_index(world_coord)
 	var Acoord = Vector2i(DEF.terrain_dict[t_name][&"A_coord_x"],DEF.terrain_dict[t_name][&"A_coord_y"])
-	Map.set_cell(DEF.Layer_Names.Terrain,coord,DEF.terrain_dict[t_name][&"source"],Acoord,0)
-	Map.set_cell(DEF.Layer_Names.Vis,coord,DEF.vis_t_dat[self.known][DEF.T_data_cols.Scource],DEF.vis_t_dat[self.known][DEF.T_data_cols.Coord],DEF.vis_t_dat[self.known][DEF.T_data_cols.Alt])
+	var tMapCoord = HEX.axial_to_oddr(coord)
+	Map.set_cell(DEF.Layer_Names.Terrain,tMapCoord,DEF.terrain_dict[t_name][&"source"],Acoord,0)
+	Map.set_cell(DEF.Layer_Names.Vis,tMapCoord,DEF.vis_t_dat[self.known][DEF.T_data_cols.Scource],DEF.vis_t_dat[self.known][DEF.T_data_cols.Coord],DEF.vis_t_dat[self.known][DEF.T_data_cols.Alt])
 	draw_contents(Map, coord)
 	
-func draw_contents(Map:TileMap, coord:Vector2i):
+func draw_contents(Map:TileMap, coord:Vector3i):
+	var tMapCoord = HEX.axial_to_oddr(coord)
 	if(not self.f_name.is_empty()):
 		var Acoord = Vector2i(DEF.terrain_dict[f_name][&"A_coord_x"],DEF.terrain_dict[f_name][&"A_coord_y"])
-		Map.set_cell(DEF.Layer_Names.Features,coord,DEF.terrain_dict[self.f_name][&"source"],Acoord)
+		Map.set_cell(DEF.Layer_Names.Features,tMapCoord,DEF.terrain_dict[self.f_name][&"source"],Acoord)
 	else:
 		#erase feature layer if no feature
-		Map.set_cell(DEF.Layer_Names.Features,coord,-1)
+		Map.set_cell(DEF.Layer_Names.Features,tMapCoord,-1)
 	if i_items.size()>0:#if items, display first
 		var source = DEF.getProperty(DEF.sDefs,self.i_items[0].shape,&"source")
 		var AtlasCoord = Vector2i(DEF.getProperty(DEF.sDefs,self.i_items[0].shape,&"A_coord_x"),DEF.getProperty(DEF.sDefs,self.i_items[0].shape,&"A_coord_y"))
-		Map.set_cell(DEF.Layer_Names.Items,coord,source,AtlasCoord)
+		Map.set_cell(DEF.Layer_Names.Items,tMapCoord,source,AtlasCoord)
 	else:#no items, erase item layer 
-		Map.set_cell(DEF.Layer_Names.Items,coord,-1)
+		Map.set_cell(DEF.Layer_Names.Items,tMapCoord,-1)
 	if(self.m_mob!=null):
 		m_mob.set_self(Map)
 	

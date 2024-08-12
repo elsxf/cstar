@@ -17,14 +17,15 @@ static func gen_overworld(_chunk_coord: Vector3i):
 	#var stair_down = DEF.feature_t_dat[DEF.feature_tile_names.sDown][DEF.T_data_cols.Scource]
 	#chunk.clear()
 	var spiral = HEX.inSpiral(Vector3i(0,0,0),DEF.chunk_size)
+	DEF.current_map.resize(spiral.size())
 	for i in spiral.size():
 		#var coord = chunkCoords * DEF.chunk_size + Vector2(i,j)
-		var coord = HEX.axial_to_oddrF(spiral[i])
-		var isLand = land_noise.get_noise_2dv(coord)>water_level
+		var coord = spiral[i]#HEX.axial_to_oddrF(spiral[i])
+		var isLand = land_noise.get_noise_3dv(coord)>water_level
 		var value
 		var tName
 		if isLand:
-			value = height_noise.get_noise_2dv(coord) + water_level
+			value = height_noise.get_noise_3dv(coord) + water_level
 			tName = DEF.terrain_dict["Surface_order"][value_to_terrain(value)]
 		else:
 			tName = DEF.terrain_dict["Surface_order"].back()
@@ -76,10 +77,9 @@ static func gen_dungeon(world_c:Vector3i, entry:Vector3i):
 		room_size.append(randi_range(3,5))
 	for i in range(num_rooms):#generate room locations
 		var maxRange = DEF.chunk_size-room_size[i]-2
-		var q = randi_range(-maxRange, maxRange)
-		var r = randi_range(-maxRange, maxRange)
-		var s = randi_range(-maxRange, maxRange)
-		room_loc.append(Vector3i(q,r,s))
+		var radians = randf_range(0,2*PI)
+		var vec = HEX.cube_rotate(radians,maxRange)
+		room_loc.append(Vector3i(vec))
 	room_loc[0] = Vector3i(entry.x,entry.y,entry.z)
 	#place rooms
 	for v in range(num_rooms):
@@ -94,6 +94,8 @@ static func gen_dungeon(world_c:Vector3i, entry:Vector3i):
 		var path = PATH.pathFind(room_loc[i],room_loc[(i+1)%num_rooms],DEF.current_map, PATH.Astar_modes.Tunnel)
 		for j in path:
 			for k in HEX.get_surround(j):
+				if not DEF.isInChunk(k):
+					continue
 				var current_index = HEX.vec3_to_index(k)
 				#chunk.set_cell(DEF.Layer_Names.Terrain,j,floor_hex,Vector2(0,0))
 				if DEF.current_map[current_index].get_m_cost()==-1:
@@ -113,10 +115,14 @@ static func gen_dungeon(world_c:Vector3i, entry:Vector3i):
 	
 	var numMobs = randi_range(8,15)
 	for i in range(numMobs):
-		var room_idx = randi_range(0,num_rooms-1)
+		var room_idx = randi_range(1,num_rooms-1)
 		var space = room_size[room_idx]-2
 		var m = Mob.new("Guard")
-		var mobLoc = room_loc[room_idx] + Vector2i(randi_range(-space,space),randi_range(-space,space))
+		var q = randi_range(-space,space)
+		var r = randi_range(-space,space)
+		if abs(q+r) > DEF.chunk_size:
+			r=-r
+		var mobLoc = room_loc[room_idx] + Vector3i(q,r,-q-r)
 		m.add_to_data(mobs,world_c,1,mobLoc)
 	var result = [DEF.current_map,mobs]
 	return result

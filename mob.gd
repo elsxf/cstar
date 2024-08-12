@@ -109,12 +109,16 @@ func deSerialize(serialized:Dictionary):
 		wornList[i]=newItem
 	worn=wornList
 	
-	if parsed.size()>9:
+	if parsed.has("Wield"):
 		var wieldParsed = parsed["Wield"]
-		wield = null if wieldParsed==null else Item.new("defualt").deSerialize(wieldParsed[0])
+		var newItem = Item.new("default")
+		newItem.deSerialize(wieldParsed)
+		wield = newItem
+	else:
+		wield = null
 
 func set_self(Map:TileMap):
-	Map.set_cell(DEF.Layer_Names.Mobs,curr_c(),self.tile_id,self.tile_coord,self.tile_alt)
+	Map.set_cell(DEF.Layer_Names.Mobs,HEX.axial_to_oddr(curr_c()),self.tile_id,self.atlas_coord,self.tile_alt)
 	
 func change_hp(delta:int):
 	set_hp(self.Hp+delta)	
@@ -141,7 +145,6 @@ func add_to_data(mob_list:Array, world_coord:Vector3i,hieght:int, coord:Vector3i
 	self.d_level = hieght
 	self.world_c = world_coord
 	self.dun_c = coord
-	print(DEF.current_map)
 	DEF.current_map[HEX.vec3_to_index(curr_c())].m_mob = self
 	mob_list.append(self)
 	self.list_of_mobs = mob_list
@@ -210,7 +213,7 @@ func get_brain():
 						cansee = false
 						break
 				if cansee:
-					target_tile = m.curr_c()
+					target_tile = HEX.vec3_to_index(m.curr_c())
 					break
 	var attack_range = get_max_melee_range()
 	var target_dist = HEX.cube_dist(self.curr_c(),HEX.index_to_vec3(target_tile))
@@ -229,9 +232,10 @@ func get_brain():
 		return
 	else:
 		var next_step = PATH.pathFind(curr_c(),HEX.index_to_vec3(target_tile),DEF.current_map).back()
-		
+		var next_idx = HEX.vec3_to_index(next_step)
+		var next_tile = DEF.current_map[next_idx]
 		next_action = func move_to_lambda(calc):
-			return  ACT.move_horizontal(self,HEX.get_c_vector(next_step,curr_c()),0,calc)
+			return  ACT.move_horizontal(self,next_tile,0,calc)
 		return
 	
 func get_action_str():
@@ -268,6 +272,8 @@ func LOS(setFov:bool = true):
 		for i in HEX.inRange(curr_c(),30):
 			if DEF.isInChunk(i):
 				canSee.append(i)
+		if setFov:
+			FOV = canSee
 		return canSee
 	for i in HEX.get_surround(curr_c()):
 		if DEF.isInChunk(i):

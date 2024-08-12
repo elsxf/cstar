@@ -7,10 +7,12 @@ res://game_over.tscn
 res://menus.tscn
 res://main_menu.tscn
 res://generation.gd
-res://hexFuncs.gd
-res://pathfinding.gd
-res://MainMenu.gd
-res://mob.gd
-res://defines.gd
 res://overworld.gd
+res://mob.gd
+res://tile.gd
+res://hexFuncs.gd
+res://actions.gd
+res://pathfinding.gd
 res://Map.gd
+res://defines.gd
+res://skills.json
