@@ -46,7 +46,7 @@ static func can_aim_at(mob:Mob, target:Mob):
 		return true
 
 static func get_aim_mob_tiles(mob:Mob):
-	var result = []
+	var result: Array[Tile] = []
 	for i in mob.LOS(false):
 		var map_idx = HEX.vec3_to_index(i)
 		if mob.get_map()[map_idx].m_mob!=null and  mob.get_map()[map_idx].m_mob!=mob:

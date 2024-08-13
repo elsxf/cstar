@@ -75,16 +75,16 @@ static func cube_dist(a : Vector3i, b: Vector3i)->int:#taxicab distance between 
 	var diff = abs(a-b)
 	return (diff.x+diff.y+diff.z)/2
 
-static func inRange(src: Vector3i, n: int)->Array:#every tile(coord) within n steps, same contents as inSpiral but unordered
+static func inRange(src: Vector3i, n: int)->Array[Vector3i]:#every tile(coord) within n steps, same contents as inSpiral but unordered
 	var center = src
-	var results = []
+	var results : Array[Vector3i] = []
 	for q in range(-n,n+1,1):
 		for r in range(max(-n,-q-n),min(n,-q+n)+1,1):
 			results.append(center + Vector3i(q,r,-q-r))
 	return results
 
-static func get_surround(src:Vector3i)->Array:
-	var result = []
+static func get_surround(src:Vector3i)->Array[Vector3i]:
+	var result : Array[Vector3i] = []
 	for i in dir_vec:
 		result.append(src+i)
 	return result
@@ -156,8 +156,8 @@ static func numSpiral(radius:int)->int:
 		return 0
 	return 1 + 3 * radius * (radius+1)
 
-static func inRing(center: Vector3i, radius: int)->Array:#ring of tiles(coord)
-	var results = []
+static func inRing(center: Vector3i, radius: int)->Array[Vector3i]:#ring of tiles(coord)
+	var results : Array[Vector3i] = []
 	if radius==0:
 		results.append(center)
 		return results
@@ -169,16 +169,16 @@ static func inRing(center: Vector3i, radius: int)->Array:#ring of tiles(coord)
 			hex = get_surround(hex)[i]
 	return results
 
-static func inSpiral(center:Vector3i, radius:int)->Array:
-	var results = []
+static func inSpiral(center:Vector3i, radius:int)->Array[Vector3i]:
+	var results : Array[Vector3i] = []
 	for i in range(0,radius+1,1):
 		results.append_array(inRing(center, i))
 	return results
 
-static func inLine(start: Vector3i, end:Vector3i)->Array:#tiles(coord) in line
+static func inLine(start: Vector3i, end:Vector3i)->Array[Vector3i]:#tiles(coord) in line
 	var a = start
 	var b = end
-	var results = []
+	var results : Array[Vector3i] = []
 	var n = cube_dist(a,b)
 	for i in range(n+1):
 		results.append(axial_round(cube_lerp(a, b, 1.0/n * i)))

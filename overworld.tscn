@@ -1,4 +1,4 @@
-[gd_scene load_steps=61 format=3 uid="uid://63wxav1bwk3a"]
+[gd_scene load_steps=63 format=3 uid="uid://63wxav1bwk3a"]
 
 [ext_resource type="Texture2D" uid="uid://b0ymsbrq6gcn3" path="res://hex.png" id="1_2quo0"]
 [ext_resource type="Script" path="res://overworld.gd" id="1_hie4k"]
@@ -27,6 +27,7 @@
 [ext_resource type="Texture2D" uid="uid://cd4ov8wsyirw1" path="res://log.png" id="18_pbyaa"]
 [ext_resource type="Texture2D" uid="uid://b581q5kp0c4hd" path="res://cave_wall_terrain_3.png" id="19_n217s"]
 [ext_resource type="Texture2D" uid="uid://bog1lphx4ndhy" path="res://rubble.png" id="20_4ydn8"]
+[ext_resource type="Texture2D" uid="uid://bcg2dyjnanwq5" path="res://Dot.png" id="21_au5be"]
 [ext_resource type="Script" path="res://HUD.gd" id="22_3d860"]
 [ext_resource type="Script" path="res://Map.gd" id="22_tcips"]
 [ext_resource type="FontFile" uid="uid://cylhjxuw36osc" path="res://fonts/FairfaxHaxHD.ttf" id="23_22nso"]
@@ -151,6 +152,10 @@ texture = ExtResource("19_n217s")
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_gahj0"]
 texture = ExtResource("20_4ydn8")
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_kfnb7"]
+texture = ExtResource("21_au5be")
 0:0/0 = 0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_74kdd"]
@@ -918,6 +923,7 @@ sources/22 = SubResource("TileSetAtlasSource_32soc")
 sources/23 = SubResource("TileSetAtlasSource_ob0sg")
 sources/24 = SubResource("TileSetAtlasSource_xqawt")
 sources/25 = SubResource("TileSetAtlasSource_gahj0")
+sources/26 = SubResource("TileSetAtlasSource_kfnb7")
 metadata/_better_terrain = {
 "decoration": ["Decoration", Color(0.411765, 0.411765, 0.411765, 1), 3, [], {
 "path": "res://addons/better-terrain/icons/Decoration.svg"

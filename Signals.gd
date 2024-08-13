@@ -3,3 +3,5 @@ extends Node
 signal Player_action_taken
 signal Player_take_action
 signal HUD_set_map
+signal HUD_highlight_tiles
+signal HUD_clear_highlight

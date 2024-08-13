@@ -7,7 +7,7 @@ class_name Mob
 @export var dun_c:Vector3i
 @export var d_level : int
 var list_of_mobs : Array
-var FOV = []
+var FOV:Array[Vector3i] = []
 @export var sight_range : int
 @export var target_tile : int#index of target tile HACK:fix this shit
 
@@ -267,7 +267,7 @@ func _ready():
 	pass # Replace with function body.
 
 func LOS(setFov:bool = true):
-	var canSee = []
+	var canSee:Array[Vector3i] = []
 	if DEF.debug_esp:
 		for i in HEX.inRange(curr_c(),30):
 			if DEF.isInChunk(i):

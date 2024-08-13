@@ -6,13 +6,10 @@ res://hitSpark.tscn
 res://game_over.tscn
 res://menus.tscn
 res://main_menu.tscn
-res://generation.gd
 res://overworld.gd
-res://mob.gd
-res://tile.gd
 res://hexFuncs.gd
-res://actions.gd
-res://pathfinding.gd
-res://Map.gd
+res://Popup.gd
 res://defines.gd
-res://skills.json
+res://Signals.gd
+res://actions.gd
+res://mob.gd

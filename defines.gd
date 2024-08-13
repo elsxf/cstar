@@ -4,6 +4,10 @@ class_name DEF
 
 enum {RIGHT,LEFT}
 
+enum Highlight_types{TILE,DOT}
+
+enum {INT_MAX = 9223372036854775807}
+
 enum Layer_Names{
 	Terrain,Features,Items,Mobs,Highlight,Vis
 }

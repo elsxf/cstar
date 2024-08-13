@@ -68,6 +68,8 @@ func _ready():
 	Signals.Player_take_action.connect(_on_player_take_action)
 	Signals.Player_action_taken.connect(_on_Player_action_taken)
 	Signals.HUD_set_map.connect(_on_HUD_set_map)
+	Signals.HUD_highlight_tiles.connect(_on_HUD_highlight_tiles)
+	Signals.HUD_clear_highlight.connect(_on_HUD_clear_highlight)
 	
 	$Map.clear()
 	
@@ -162,15 +164,24 @@ func _unhandled_input(event: InputEvent) -> void:
 			else:
 				var choices = ACT.get_aim_mob_tiles(DEF.playerM)
 				var chosen:Mob
-				match choices.size():
-					0:
-						DEF.textBuffer += "[color=BROWN]nothing to fire at!\n[/color]"
-					1:
-						chosen = choices[0].m_mob
-						next_action = func fire_lambda(calc):
-							return ACT.attack_phys_ranged(DEF.playerM,chosen,calc)
-					_:
-						pass
+				if choices.size()==0:
+					DEF.textBuffer += "[color=BROWN]nothing to fire at!\n[/color]"
+				elif DEF.getEventAction(event)=="Force_fire":
+					chosen = choices[0].m_mob
+					next_action = func fire_lambda(calc):
+						return ACT.attack_phys_ranged(DEF.playerM,chosen,calc)
+				else:
+					var primeTarget = choices[0].coord
+					var targetIdx = DEF.playerM.FOV.find(primeTarget)
+					
+					var temp = DEF.playerM.FOV[0]
+					DEF.playerM.FOV[0] = primeTarget
+					DEF.playerM.FOV[targetIdx] = temp
+					
+					var vec = await $HUD/menus/Popup.popTile("AIMING",DEF.playerM.FOV)
+					chosen = DEF.current_map[HEX.vec3_to_index(vec)].m_mob
+					next_action = func fire_lambda(calc):
+						return ACT.attack_phys_ranged(DEF.playerM,chosen,calc)
 		"pickup":
 			var valid_items = []
 			for i in HEX.inRange(DEF.playerM.curr_c(),1):
@@ -207,12 +218,14 @@ func _unhandled_input(event: InputEvent) -> void:
 				var onChoice = func onChoice_lambda(choice):
 					Signals.emit_signal("Player_take_action", func wear_lambda(calc):
 						valid_items.erase(choice)
-						return ACT.wear(DEF.playerM,choice,calc))
+						return ACT.wear(DEF.playerM,choice,calc)
+						)
 				$HUD/menus/Popup.popChoice("wear what?",valid_items, true, onChoice)
 		"wield":
 			var onChoice = func onChoice_lambda(choice):
 				Signals.emit_signal("Player_take_action", func wield_lambda(calc):
-					return ACT.wield(DEF.playerM,choice,calc))
+					return ACT.wield(DEF.playerM,choice,calc)
+					)
 			$HUD/menus/Popup.popChoice("wield what?", DEF.playerM.get_access_items(), true, onChoice)
 		"Harvest":
 			var validTiles = []
@@ -349,3 +362,16 @@ func _on_HUD_set_map(mapArray):
 	for i in spiral.size():
 		mapArray[i].set_self(%Map,spiral[i])
 	BetterTerrain.update_terrain_area($Map, DEF.Layer_Names.Terrain, Rect2i(-DEF.chunk_size*2,-DEF.chunk_size*2,DEF.chunk_size*2,DEF.chunk_size*2), true)
+
+func _on_HUD_highlight_tiles(vecArray, mode=DEF.Highlight_types.TILE):
+	#$Map.clear_layer(DEF.Layer_Names.Highlight)
+	for i in vecArray:
+		match mode:
+			DEF.Highlight_types.TILE:
+				$Map.set_cell(DEF.Layer_Names.Highlight,HEX.axial_to_oddr(i), 22, Vector2i(0, 0))
+			DEF.Highlight_types.DOT:
+				$Map.set_cell(DEF.Layer_Names.Highlight,HEX.axial_to_oddr(i), 26, Vector2i(0, 0))
+				
+func _on_HUD_clear_highlight():
+	$Map.clear_layer(DEF.Layer_Names.Highlight)
+		
