@@ -19,16 +19,16 @@ func close_popup():
 	choices_array = []
 	DEF.prevFocus()
 
-func popInput(popupText):
+func _on_popInput(popupText)->void:
 	mode = MODE.INPUT
 	self.visible = true
 	DEF.changeFocus(DEF.Focus.POPUP_MENU)
 	$PopupTitle.text = popupText
 	var result = await Signal(self,'validInput')
 	close_popup()
-	return result
+	Signals.popValidResponse.emit(result)
 
-func popVector(popupText):
+func _on_popVector(popupText)->void:
 	mode = MODE.INPUT
 	self.visible = true
 	DEF.changeFocus(DEF.Focus.POPUP_MENU)
@@ -38,10 +38,12 @@ func popVector(popupText):
 	if DEF.keyBinds.has(inputstr):
 		var inputAction = DEF.keyBinds[inputstr]
 		if HEX.dir_str.has(inputAction):
-			return HEX.dir_vec[HEX.dir_str[inputAction]]
-	return null
+			Signals.popValidResponse.emit(HEX.dir_vec[HEX.dir_str[inputAction]])
+			return
+	Signals.popValidResponse.emit(null)
+	return
 
-func popChoice(popupText:String, choiceList:Array, closeOnChoice:bool = true, onChoiceLambda = null):
+func _on_popChoice(popupText:String, choiceList:Array, closeOnChoice:bool = true, onChoiceLambda = null)->void:
 	mode = MODE.CHOICE
 	self.visible = true
 	DEF.changeFocus(DEF.Focus.POPUP_MENU)
@@ -51,11 +53,13 @@ func popChoice(popupText:String, choiceList:Array, closeOnChoice:bool = true, on
 		var choice = await Signal(self,'validInput')
 		if typeof(choice)!=TYPE_INT:
 			close_popup()
-			return null
+			Signals.popValidResponse.emit(null)
+			return
 		var chosen = choiceList[choice]
 		if onChoiceLambda == null:
 			close_popup()
-			return chosen
+			Signals.popValidResponse.emit(chosen)
+			return
 		if num_choice==-1 or num_choice==0:
 			onChoiceLambda.call(chosen)
 		else:
@@ -63,10 +67,9 @@ func popChoice(popupText:String, choiceList:Array, closeOnChoice:bool = true, on
 		if closeOnChoice:
 			close_popup()
 			break
-
 	pass
 
-func popTile(popupText:String, choiceVecList:Array[Vector3i], drawLine:bool = true):
+func _on_popTile(popupText:String, choiceVecList:Array[Vector3i], drawLine:bool = true)->void:
 	mode = MODE.TILE
 	self.visible = false
 	DEF.changeFocus(DEF.Focus.POPUP_MENU)
@@ -74,16 +77,19 @@ func popTile(popupText:String, choiceVecList:Array[Vector3i], drawLine:bool = tr
 	choices_array = choiceVecList
 	highlight_idx = 0;
 	Signals.emit_signal("HUD_clear_highlight")
-	Signals.emit_signal("HUD_highlight_tiles", HEX.inLine(DEF.playerM.curr_c(),choices_array[highlight_idx]),DEF.Highlight_types.DOT)
+	if drawLine:
+		Signals.emit_signal("HUD_highlight_tiles", HEX.inLine(DEF.playerM.curr_c(),choices_array[highlight_idx]),DEF.Highlight_types.DOT)
 	Signals.emit_signal("HUD_highlight_tiles", [choices_array[0]])
 	var idx = await Signal(self,'validInput')
 	if idx is String:# "NoAct":
 		close_popup()
-		return null
+		Signals.popValidResponse.emit(null)
+		return
 	else:
 		var choice = choiceVecList[idx]
 		close_popup()
-		return choice
+		Signals.popValidResponse.emit(choice)
+		return
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if DEF.gameState[&"focus"]!=DEF.Focus.POPUP_MENU or event.is_released():
@@ -165,6 +171,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			validInput.emit(highlight_idx)
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	Signals.popInput.connect(_on_popInput)
+	Signals.popVector.connect(_on_popVector)
+	Signals.popChoice.connect(_on_popChoice)
+	Signals.popTile.connect(_on_popTile)
 	pass # Replace with function body.
 
 

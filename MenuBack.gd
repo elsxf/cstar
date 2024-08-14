@@ -18,9 +18,10 @@ var panel_line_count: int = -1
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	panel_line_count = $Panel1.size.y/32
+	Signals.enter_menu.connect(_on_enter_menu)
 	pass # Replace with function body.
 
-func enter_menu(menuName:String):
+func _on_enter_menu(menuName:String):
 	left_idx = 0
 	right_idx = 0
 	DEF.changeFocus(DEF.Focus.GAME_MENU)
@@ -41,7 +42,7 @@ func draw_elements(elements:Dictionary, panel:RichTextLabel, lambda=func foo(bar
 		if not names.is_empty():
 			panel.text += "[color=pink][u]"+names+"[/u][/color] "
 		if(typeof(elements[names])==TYPE_ARRAY):
-			panel.text += "\n"+DEF.listStr(elements[names])
+			panel.text += "\n"+DEF.listStr(elements[names])+"\n"
 		elif(typeof(elements[names])==TYPE_DICTIONARY):
 			panel.text += "\n"
 			draw_elements(elements[names], panel,lambda)
@@ -125,6 +126,13 @@ func draw_panel():
 			right_array = []
 			Panel2_enabled = false
 			active_panel = LEFT
+		"Magic":
+			left_elements["Spells"] = DEF.magic_dict.keys()
+			left_array = DEF.magic_dict.keys()
+			right_elements["Details"] = DEF.magic_dict[left_array[left_idx]]
+			right_array = []
+			Panel2_enabled = false
+			active_panel = LEFT
 	$Panel1.text = ""
 	$Panel2.text = ""
 	draw_elements(left_elements,$Panel1,left_lambda)
@@ -202,27 +210,32 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			if $Pages.get_tab_title($Pages.current_tab)=="Inventory":
 				close_menu()
 			else:
-				enter_menu("Inventory")
+				_on_enter_menu("Inventory")
 		"keybindings":
 			if $Pages.get_tab_title($Pages.current_tab)=="Keybinds":
 				close_menu()
 			else:
-				enter_menu("Keybinds")
+				_on_enter_menu("Keybinds")
 		"craft":
 			if $Pages.get_tab_title($Pages.current_tab)=="Craft":
 				close_menu()
 			else:
-				enter_menu("Craft")
+				_on_enter_menu("Craft")
 		"construct":
 			if $Pages.get_tab_title($Pages.current_tab)=="Construct":
 				close_menu()
 			else:
-				enter_menu("Construct")
+				_on_enter_menu("Construct")
 		"character":
 			if $Pages.get_tab_title($Pages.current_tab)=="Character":
 				close_menu()
 			else:
-				enter_menu("Character")
+				_on_enter_menu("Character")
+		"MagicMenu":
+			if $Pages.get_tab_title($Pages.current_tab)=="Magic":
+				close_menu()
+			else:
+				_on_enter_menu("Magic")
 	draw_panel()
 	$Panel1.scroll_to_line(left_idx-1)
 	$Panel2.scroll_to_line(right_idx-1)
@@ -230,11 +243,14 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		match $Pages.get_tab_title($Pages.current_tab):
 			"Inventory":
 				if active_panel==LEFT:
-					%Popup.popInput(left_array[left_idx]._to_string_verbose())
+					Signals.popInput.emit(left_array[right_idx]._to_string_verbose())
+					await Signal(Signals,'popValidResponse')
 				else:
-					%Popup.popInput(right_array[right_idx]._to_string_verbose())
+					Signals.popInput.emit(right_array[right_idx]._to_string_verbose())
+					await Signal(Signals,'popValidResponse')
 			"Keybinds":
-				DEF.actionBinds[left_array[left_idx]] = await %Popup.popInput("Enter a new key:")
+				Signals.popInput.emit("Enter a new key:")
+				DEF.actionBinds[left_array[left_idx]] = await Signal(Signals,'popValidResponse')
 				DEF.keyBinds = DEF.reverseDict(DEF.actionBinds)
 			"Craft":
 				var recepie = null
@@ -246,12 +262,14 @@ func _unhandled_key_input(event: InputEvent) -> void:
 					var material_choices = right_elements["Needs"]["Materials"]
 					match material_choices.size():
 						0:
-							await %Popup.popInput("Nothing to make it from!")
+							Signals.popInput.emit("Nothing to make it from!")
+							await Signal(Signals,'popValidResponse')
 							return
 						1:
 							chosen_material = material_choices[0]
 						_:
-							chosen_material = await %Popup.popChoice("Make From:", material_choices)
+							Signals.popChoice.emit("Make From:", material_choices)
+							chosen_material = await Signal(Signals,'popValidResponse')
 					if chosen_material == null:
 						return
 					#get all items of given material
@@ -263,7 +281,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 					var volume_has = 0
 					var reagent_choices = []
 					while(volume_has<volume_needed):
-						var chosen_reagent =  await %Popup.popChoice("need "+ DEF.dispLiter(volume_needed-volume_has) + " more of", valid_items)
+						Signals.popChoice.emit("need "+ DEF.dispLiter(volume_needed-volume_has) + " more of", valid_items)
+						var chosen_reagent =  await Signal(Signals,'popValidResponse')
 						if chosen_reagent==null:
 							return
 						volume_has += chosen_reagent.volume
@@ -280,9 +299,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 							if item.shape == shape:
 								valid_items.append(item)
 						if valid_items.size()==0:
-							await %Popup.popInput("Missing Ingredients!")
+							Signals.popInput.emit("Missing Ingredients!")
+							await Signal(Signals,'popValidResponse')
 							return
-						var chosen_reagent =  await %Popup.popChoice("need "+str(shape)+":", valid_items)
+						Signals.popChoice.emit("need "+str(shape)+":", valid_items)
+						var chosen_reagent = await Signal(Signals,'popValidResponse')
 						if chosen_reagent==null:
 							return
 						reagent_choices.append(chosen_reagent)
@@ -295,10 +316,12 @@ func _unhandled_key_input(event: InputEvent) -> void:
 					return ACT.craft(DEF.playerM,recepie,calc))
 			"Construct":
 				close_menu()
-				var tile_coords = HEX.add_2_3(DEF.playerM.curr_c(),await %Popup.popVector("construct where?"))
+				Signals.popVector.emit("construct where?")
+				var tile_coords = HEX.add_2_3(DEF.playerM.curr_c(),await Signal(Signals,'popValidResponse'))
 				var tile_to_place:Tile = DEF.playerM.map[tile_coords.x][tile_coords.y]
 				if not tile_to_place.f_name.is_empty() or tile_to_place.get_m_cost()==-1:
-					await %Popup.popInput("Something is there!")
+					Signals.popInput.emit("Something is there!")
+					await Signal(Signals,'popValidResponse')
 					return
 				var reagents = {}
 				for entry in DEF.construct_dict[left_array[left_idx]]["Ingredients"]:
@@ -309,12 +332,14 @@ func _unhandled_key_input(event: InputEvent) -> void:
 							valid_choices.append(item)
 					match valid_choices.size():
 						0:
-							await %Popup.popInput("Nothing to make it from")
+							Signals.popInput.emit("Nothing to make it from")
+							await Signal(Signals,'popValidResponse')
 							return
 						1:
 							reagents[valid_choices[0]]=entry[valid_choices[0]]
 						_:
-							var item_choice = await %Popup.popChoice("Use Which?", valid_choices)
+							Signals.popChoice.emit("Use Which?", valid_choices)
+							var item_choice = await Signal(Signals,'popValidResponse')
 							reagents[item_choice]=entry[item_choice]
 				#if player has enough in inventory, remove items
 				for entry in reagents:
@@ -333,7 +358,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 				tile_to_place.feature_data = {"work_total":time_u,"work_left":time_u,"feature_into":into}
 				Signals.Player_take_action.emit(func construct_lambda(calc):
 					return ACT.construct(DEF.playerM,tile_to_place,calc))
-						
+			"Magic":
+				DEF.playerM.last_spell = left_array[left_idx]
 					
 		#TODO: the thing
 		pass

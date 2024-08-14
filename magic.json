@@ -1,9 +1,29 @@
 {
 	"Flags":{
-		
 	},
 	"defualt":{
 		"range":0,
-		
-	}
+		"name":"default",
+		"focusCost":10,
+		"timeuCost":50,
+		"duration":0,
+		"upkeep":0,
+		"flags":[],
+		"effects":[],
+	},
+	"magicMissile":{
+		"range":6,
+		"name":"Dart",
+		"focusCost":20,
+		"timeuCost":20,
+	},
+	"statBoost":{
+		"range":-1,
+		"name":"Full Body",
+		"focusCost":10,
+		"timeuCost":20,
+		"upkeep":1,
+		"duration":-1,
+		"effects":["strBoost1","agiBoost1","percBoost1"],
+	},
 }

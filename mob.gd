@@ -34,6 +34,8 @@ var FOV:Array[Vector3i] = []
 var next_action = null
 var current_activity = null
 
+var last_spell:String = ""
+
 func _init(mob_name:String):
 	self.name = mob_name
 	self.Hp_max = DEF.mob_dict[mob_name]["hp"]
@@ -47,10 +49,13 @@ func _init(mob_name:String):
 			Item.new(parsed[0], parsed[1]).add_to_container(worn,self)
 	if not DEF.getProperty(DEF.mob_dict,self.name,&"wield").is_empty():
 		var parsed = DEF.getProperty(DEF.mob_dict,self.name,&"wield").split(" ")
+		var newItem:Item
 		if parsed.size() == 1:
-			wield = Item.new(parsed[0])
+			newItem = Item.new(parsed[0])
 		else:
-			wield = Item.new(parsed[0],parsed[1])
+			newItem = Item.new(parsed[0],parsed[1])
+		wield=newItem
+		newItem.container=self
 	self.speed = DEF.getProperty(DEF.mob_dict,self.name,&"speed")
 	self.attributes = DEF.skill_dict[DEF.getProperty(DEF.mob_dict,self.name,&"skills")]
 	self.tile_id = DEF.getProperty(DEF.mob_dict,self.name,&"source")
@@ -77,7 +82,8 @@ func serialize()->Dictionary:
 		itemsWorn[i] = worn[i].serialize()
 	serialStr["Worn"] = itemsWorn
 	
-	serialStr["Wield"] = null if wield == null else wield.serialize()
+	if wield!=null:
+		serialStr["Wield"] = wield.serialize()
 	
 	return serialStr
 
@@ -92,28 +98,23 @@ func deSerialize(serialized:Dictionary):
 	focus = int(parsed["Mob"][5])
 	
 	var itemParsed = parsed["Items"]
-	var itemList = []
-	itemList.resize(itemParsed.size())
 	for i in itemParsed.size():
 		var newItem = Item.new("default")
 		newItem.deSerialize(itemParsed[i])
-		itemList[i]=newItem
-	items=itemList
+		newItem.add_to_container(items,self)
 	
 	var wornParsed = parsed["Worn"]
-	var wornList = []
-	wornList.resize(wornParsed.size())
 	for i in wornParsed.size():
 		var newItem = Item.new("default")
 		newItem.deSerialize(wornParsed[i])
-		wornList[i]=newItem
-	worn=wornList
+		newItem.add_to_container(worn,self)
 	
 	if parsed.has("Wield"):
 		var wieldParsed = parsed["Wield"]
 		var newItem = Item.new("default")
 		newItem.deSerialize(wieldParsed)
 		wield = newItem
+		newItem.container=self
 	else:
 		wield = null
 

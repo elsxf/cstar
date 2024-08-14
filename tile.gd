@@ -21,7 +21,9 @@ func _init(terrain_name:StringName = &"Deep_Water", feature:StringName = &"",mob
 	
 func serialize()->Dictionary:
 	var serialStr = {}
-	serialStr["Tile"] = [t_name, f_name, known]
+	var t_int = DEF.terrain_dict.keys().find(t_name)
+	var f_int = DEF.terrain_dict.keys().find(f_name)
+	serialStr["Tile"] = [t_int, f_int, known]
 	var itemsSerialized = []
 	itemsSerialized.resize(i_items.size())
 	for i in i_items.size():
@@ -31,7 +33,11 @@ func serialize()->Dictionary:
 
 func deSerialize(serialStr):
 	var parsed = serialStr
-	_init(parsed["Tile"][0],parsed["Tile"][1])
+	var t_int = int(parsed["Tile"][0])
+	var t_str = DEF.terrain_dict.keys()[t_int]
+	var f_int = int(int(parsed["Tile"][1]))
+	var f_str = "" if f_int==-1 else DEF.terrain_dict.keys()[f_int]
+	_init(t_str,f_str)
 	self.known = int(parsed["Tile"][2])
 	
 	var itemParsed = parsed["Items"]
@@ -55,8 +61,8 @@ func set_self(Map:TileMap, world_coord:Vector3i):#call only once and before terr
 	Map.set_cell(DEF.Layer_Names.Vis,tMapCoord,DEF.vis_t_dat[self.known][DEF.T_data_cols.Scource],DEF.vis_t_dat[self.known][DEF.T_data_cols.Coord],DEF.vis_t_dat[self.known][DEF.T_data_cols.Alt])
 	draw_contents(Map, coord)
 	
-func draw_contents(Map:TileMap, coord:Vector3i):
-	var tMapCoord = HEX.axial_to_oddr(coord)
+func draw_contents(Map:TileMap, newCoord:Vector3i):
+	var tMapCoord = HEX.axial_to_oddr(newCoord)
 	if(not self.f_name.is_empty()):
 		var Acoord = Vector2i(DEF.terrain_dict[f_name][&"A_coord_x"],DEF.terrain_dict[f_name][&"A_coord_y"])
 		Map.set_cell(DEF.Layer_Names.Features,tMapCoord,DEF.terrain_dict[self.f_name][&"source"],Acoord)

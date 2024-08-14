@@ -52,6 +52,7 @@ static var faction_dict = JSON.parse_string(FileAccess.get_file_as_string("facti
 static var item_dict = JSON.parse_string(FileAccess.get_file_as_string("items.json"))
 static var terrain_dict = JSON.parse_string(FileAccess.get_file_as_string("terrain.json"))
 static var construct_dict = JSON.parse_string(FileAccess.get_file_as_string("construction.json"))
+static var magic_dict = JSON.parse_string(FileAccess.get_file_as_string("magic.json"))
 static var mDefs = JSON.parse_string(FileAccess.get_file_as_string("mat_defs.json"))
 static var sDefs = JSON.parse_string(FileAccess.get_file_as_string("shape_defs.json"))
 		
@@ -153,7 +154,6 @@ static func create_save_file():
 	Item.new("Wood","Spear").add_to_container(DEF.playerM.items,DEF.playerM)
 	Item.new("Stone","Spear").add_to_container(DEF.playerM.items,DEF.playerM)
 	Item.new("Metal","Spear").add_to_container(DEF.playerM.items,DEF.playerM)
-	DEF.playerM.wield = Item.new("Wood","Bow")
 	
 	GEN.init_random()
 	
@@ -208,7 +208,7 @@ static func process_json():
 	# resolves flags into ints, go from human readable string arrays to bitwize ints
 	#TODO:see if prefab weapon/armor values is a good idea
 	var excludes = [&"Surface_order",&"Under_order", &"Feature_order"]
-	for dict in [mDefs,sDefs,mob_dict,terrain_dict]:
+	for dict in [mDefs,sDefs,mob_dict,terrain_dict,magic_dict]:
 		for entry in dict:
 			if entry in excludes:
 				continue

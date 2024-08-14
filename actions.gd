@@ -42,8 +42,9 @@ static func phys_penetration(target:Mob, blunt:int, cut:int,pierce:int)->Vector4
 	return Vector4i(damageTotal,bluntDamage,cutDamage,pierceDamage)
 
 static func can_aim_at(mob:Mob, target:Mob):
-	if target.curr_c() in mob.LOS(false):
+	if target!=null and target.curr_c() in mob.LOS(false):
 		return true
+	return false
 
 static func get_aim_mob_tiles(mob:Mob):
 	var result: Array[Tile] = []
@@ -64,7 +65,7 @@ static func move_horizontal(mob:Mob,target_tile:Tile,_move_mode:int = Move_Modes
 	if next_tile_cost>=0:
 		if target_tile.m_mob==null:#TODO: switch with friendly
 			if not calc:
-				DEF.textBuffer+=(str(mob)+" moved to "+str(target_tile.coord)+"\n")
+				#DEF.textBuffer+=(str(mob)+" moved to "+str(target_tile.coord)+"\n")
 				#actually move mob
 				#remove old tile assignment
 				mob.get_map()[curr_idx].m_mob=null
@@ -157,8 +158,13 @@ static func attack_phys_melee(mob:Mob, target:Mob, calc:bool):
 
 static func attack_phys_ranged(mob:Mob, target:Mob, calc:bool):
 	if not can_aim_at(mob,target):
+		DEF.textBuffer+="[color=brown]you lose track of "+str(target)+"\n[/color]"
 		return 0#no longer a target, refund
 	if not calc:
+		#make sure mob shooting still has ranged weapon with enough range
+		if mob.wield==null or DEF.getProperty(DEF.sDefs,mob.wield.shape,"r_range")<HEX.cube_dist(mob.curr_c(),target.curr_c()):
+			DEF.textBuffer+="[color=brown]you too far from "+str(target)+"\n[/color]"
+			return 0#no longer able to shoot or mob out of range
 		#TODO:calculate attack cost
 		var attack_cost:int = 50
 		
@@ -207,8 +213,11 @@ static func attack_phys_ranged(mob:Mob, target:Mob, calc:bool):
 		next_hit_spark = target.curr_c()
 	return 5
 
-static func cast_spell(mob:Mob, target, spell_name:String, clalc:bool):
-	pass
+static func cast_spell(mob:Mob, target, spell_name:String, calc:bool):
+	var spell = DEF.magic_dict[spell_name]
+	if not calc:
+		pass
+	return spell["timeuCost"]
 
 static func pickup(mob:Mob,toPickUp:Item, calc:bool, num = -1):
 	if not calc:
@@ -218,6 +227,8 @@ static func pickup(mob:Mob,toPickUp:Item, calc:bool, num = -1):
 static func drop(mob:Mob,toDrop:Item,calc:bool, num = -1):
 	if not calc:
 		var tile:Tile = mob.get_map()[HEX.vec3_to_index(mob.curr_c())]
+		if mob.wield == toDrop:
+			mob.wield = null
 		toDrop.transfer_to_container(tile,tile.i_items,num)
 	return 10
 

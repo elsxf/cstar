@@ -4,7 +4,7 @@ const hitSparkRes = preload("res://hitSpark.tscn")
 
 
 var tile_offset = Vector2(-32,-32)#tilesize / 2 * scale
-var zoomScale = 2.0
+var zoomScale = .5
 var zoomMin = .25
 var zoomMax = 4
 
@@ -98,15 +98,17 @@ func _unhandled_input(event: InputEvent) -> void:
 	
 	match DEF.getEventAction(event):
 		"OpenInventory":
-			$HUD/menus/GMenu.enter_menu("Inventory")
+			Signals.enter_menu.emit("Inventory")
 		"keybindings":
-			$HUD/menus/GMenu.enter_menu("Keybinds")
+			Signals.enter_menu.emit("Keybinds")
 		"craft":
-			$HUD/menus/GMenu.enter_menu("Craft")
+			Signals.enter_menu.emit("Craft")
 		"construct":
-			$HUD/menus/GMenu.enter_menu("Construct")
+			Signals.enter_menu.emit("Construct")
 		"character":
-			$HUD/menus/GMenu.enter_menu("Character")
+			Signals.enter_menu.emit("Character")
+		"MagicMenu":
+			Signals.enter_menu.emit("Magic")
 		"zoom":
 			zoomScale *=2
 			if zoomScale>zoomMax:
@@ -142,7 +144,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			var onChoice = func onChoice_lambda(choice):
 				Signals.emit_signal("Player_take_action", func apply_lambda(calc):
 					return ACT.apply(DEF.playerM,choice,calc))
-			$HUD/menus/Popup.popChoice("Apply what?", DEF.playerM.get_access_items(), true, onChoice)
+			Signals.popChoice.emit("Apply what?", DEF.playerM.get_access_items(), true, onChoice)
 			pass
 		"auto":
 			for i in HEX.inRange(DEF.playerM.curr_c(), DEF.playerM.get_max_melee_range()):
@@ -178,10 +180,33 @@ func _unhandled_input(event: InputEvent) -> void:
 					DEF.playerM.FOV[0] = primeTarget
 					DEF.playerM.FOV[targetIdx] = temp
 					
-					var vec = await $HUD/menus/Popup.popTile("AIMING",DEF.playerM.FOV)
+					Signals.popTile.emit("AIMING",DEF.playerM.FOV)
+					var vec = await Signal(Signals,'popValidResponse')
 					chosen = DEF.current_map[HEX.vec3_to_index(vec)].m_mob
 					next_action = func fire_lambda(calc):
 						return ACT.attack_phys_ranged(DEF.playerM,chosen,calc)
+		"cast":
+			if DEF.playerM.last_spell.is_empty():
+				Signals.enter_menu.emit("Magic")
+			else:
+				var spellName = DEF.playerM.last_spell
+				var spell = DEF.magic_dict[spellName]
+				var target
+				match DEF.getProperty(DEF.magic_dict,spellName,"range"):
+					-1:
+						#self-targeting
+						target = DEF.playerM
+					0:
+						#TODO: melee spells
+						pass
+					_:
+						#ranged spells
+						Signals.popTile.emit("AIMING",DEF.playerM.FOV)
+						var vec = await Signal(Signals,'popValidResponse')
+						target = DEF.current_map[HEX.vec3_to_index(vec)]
+						next_action = func cast_lambda(calc):
+							return ACT.cast_spell(DEF.playerM,target,DEF.playerM.last_spell,calc)
+			pass
 		"pickup":
 			var valid_items = []
 			for i in HEX.inRange(DEF.playerM.curr_c(),1):
@@ -197,12 +222,20 @@ func _unhandled_input(event: InputEvent) -> void:
 						if num == -1 or num > choice.count:
 							valid_items.erase(choice)
 						Signals.emit_signal("Player_take_action",func action_lambda(calc):return ACT.pickup(DEF.playerM,choice,calc,num))
-					$HUD/menus/Popup.popChoice("Pickup what?", valid_items, false,onChoice)
+					Signals.popChoice.emit("Pickup what?", valid_items, false,onChoice)
 		"drop":
 			#TODO:select tile to drop on
+			var valid_items = []
+			valid_items.append_array(DEF.playerM.items)
+			if DEF.playerM.wield != null:
+				valid_items.append(DEF.playerM.wield)
 			var onChoice = func onChoice_lambda(choice, num = -1):
-				Signals.emit_signal("Player_take_action",func drop_lambda(calc):return ACT.drop(DEF.playerM,choice,calc, num))
-			$HUD/menus/Popup.popChoice("Drop what?", DEF.playerM.items, false, onChoice)
+				if num == -1 or num > choice.count:
+					valid_items.erase(choice)
+				Signals.emit_signal("Player_take_action",func drop_lambda(calc):
+					return ACT.drop(DEF.playerM,choice,calc, num)
+				)
+			Signals.popChoice.emit("Drop what?", valid_items, false, onChoice)
 			#var choice =  await Signal($HUD/menus,'choiceMade')
 			#next_action = func drop_lambda(calc):
 						#return ACT.drop(DEF.playerM,choice,calc)
@@ -220,13 +253,13 @@ func _unhandled_input(event: InputEvent) -> void:
 						valid_items.erase(choice)
 						return ACT.wear(DEF.playerM,choice,calc)
 						)
-				$HUD/menus/Popup.popChoice("wear what?",valid_items, true, onChoice)
+				Signals.popChoice.emit("wear what?",valid_items, true, onChoice)
 		"wield":
 			var onChoice = func onChoice_lambda(choice):
 				Signals.emit_signal("Player_take_action", func wield_lambda(calc):
 					return ACT.wield(DEF.playerM,choice,calc)
 					)
-			$HUD/menus/Popup.popChoice("wield what?", DEF.playerM.get_access_items(), true, onChoice)
+			Signals.popChoice.emit("wield what?", DEF.playerM.get_access_items(), true, onChoice)
 		"Harvest":
 			var validTiles = []
 			for i in HEX.inRange(DEF.playerM.curr_c(),1):
@@ -244,15 +277,17 @@ func _unhandled_input(event: InputEvent) -> void:
 				_:
 					for i in validTiles:
 						$Map.set_cell(DEF.Layer_Names.Highlight,HEX.axial_to_oddr(i), 22, Vector2i(0, 0))
-					var choice = await $HUD/menus/Popup.popVector("Harvest Where?")
+					Signals.popVector.emit("Harvest Where?")
+					var choice = await Signal(Signals,'popValidResponse')
 					if choice!=null:
 						var target = DEF.playerM.curr_c()+choice
 						next_action = func Harvest_lambda(calc):
 							return ACT.harvest(DEF.current_map[HEX.vec3_to_index(target)],calc)
 		"smash":
-			var choice = await $HUD/menus/Popup.popVector("Smash Where?")
+			Signals.popVector.emit("Smash Where?")
+			var choice = await Signal(Signals,'popValidResponse')
 			if choice!=null:
-				var target =HEX.add_2_3(DEF.playerM.curr_c(),choice)
+				var target = DEF.playerM.curr_c()+choice
 				next_action = func onChoice_lambda(calc):
 					var tileIdx = HEX.vec3_to_index(target)
 					var result = ACT.smash(DEF.current_map[tileIdx],calc)
@@ -330,7 +365,8 @@ func _on_player_take_action(Action_Lambda) -> void:
 
 
 	if(DEF.playerM.Hp<=0):
-		await $HUD/menus/Popup.popInput("You died!")
+		Signals.popVector.emit("You died!")
+		await Signal(Signals,'popValidResponse')
 		get_tree().root.add_child(preload("res://game_over.tscn").instantiate())
 		queue_free()
 	
@@ -361,7 +397,7 @@ func _on_HUD_set_map(mapArray):
 	var spiral = HEX.inSpiral(Vector3i(0,0,0),rad)
 	for i in spiral.size():
 		mapArray[i].set_self(%Map,spiral[i])
-	BetterTerrain.update_terrain_area($Map, DEF.Layer_Names.Terrain, Rect2i(-DEF.chunk_size*2,-DEF.chunk_size*2,DEF.chunk_size*2,DEF.chunk_size*2), true)
+	BetterTerrain.update_terrain_cells($Map, DEF.Layer_Names.Terrain, %Map.get_used_cells(DEF.Layer_Names.Terrain), true)
 
 func _on_HUD_highlight_tiles(vecArray, mode=DEF.Highlight_types.TILE):
 	#$Map.clear_layer(DEF.Layer_Names.Highlight)

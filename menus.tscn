@@ -108,13 +108,14 @@ offset_bottom = 40.5
 theme_override_fonts/font = ExtResource("1_wmoxl")
 theme_override_font_sizes/font_size = 32
 theme_override_styles/tab_selected = ExtResource("2_6gd4m")
-tab_count = 5
+tab_count = 6
 drag_to_rearrange_enabled = true
 tab_0/title = "Inventory"
 tab_1/title = "Keybinds"
 tab_2/title = "Character"
 tab_3/title = "Craft"
 tab_4/title = "Construct"
+tab_5/title = "Magic"
 
 [node name="Popup" type="GridContainer" parent="."]
 unique_name_in_owner = true

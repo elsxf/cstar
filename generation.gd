@@ -58,6 +58,17 @@ static func gen_surface(over_coord: Vector3i, over_tile : Tile):
 		#chunk.set_cell(DEF.Layer_Names.Terrain,Vector2(i,j),DEF.over_t_dat[value][0],Vector2(0,0))
 		var t = Tile.new(value,feature)
 		DEF.current_map[i]=t
+	#terrain naturalizations
+	for i in spiral.size():
+		if DEF.current_map[i].t_name == &"Cave_Wall":
+			for j in HEX.get_surround(spiral[i]):
+				var idx = HEX.vec3_to_index(j)
+				if DEF.current_map.size()>idx and DEF.current_map[idx].f_name == &"Tree":
+					DEF.current_map[idx].f_name = ""
+		if DEF.current_map[i].f_name == &"Tree":
+			var idx = HEX.vec3_to_index(HEX.get_surround(spiral[i]).pick_random())
+			if DEF.current_map.size()>idx and DEF.current_map[idx].f_name == &"Tree":
+				DEF.current_map[idx].f_name = ""
 	#chunk.set_cell(DEF.Layer_Names.Features,Vector2i(32,32),over_tile,Vector2(0,0))
 	DEF.current_map[0].f_name=over_tile.f_name
 	var result = [DEF.current_map,[]]

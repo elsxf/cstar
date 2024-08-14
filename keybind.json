@@ -9,6 +9,8 @@
 	"2":"MDown",
 	"5":"Center",
 	"a":"apply",
+	"C":"cast",
+	"c":"MagicMenu",
 	"i":"OpenInventory",
 	",":"pickup",
 	"d":"drop",
