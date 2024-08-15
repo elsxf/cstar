@@ -269,8 +269,8 @@ static func pickup(mob:Mob,toPickUp:Item, calc:bool, num = -1):
 static func drop(mob:Mob,toDrop:Item,calc:bool, num = -1):
 	if not calc:
 		var tile:Tile = mob.get_map()[HEX.vec3_to_index(mob.curr_c())]
-		if mob.wield == toDrop:
-			mob.wield = null
+		#if mob.wield == toDrop:
+			#mob.wield = null
 		toDrop.transfer_to_container(tile,tile.i_items,num)
 	return 10
 

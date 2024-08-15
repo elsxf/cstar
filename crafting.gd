@@ -6,7 +6,7 @@ static func get_craftable_list():
 	var allList = DEF.sDefs.keys()
 	#allList is every entry in sDefs
 	#we need to exclude default, Flags, and any entry with the noncraft flag
-	var toExclude = ["Flags","default"]
+	var toExclude = ["Flags","default","Raw"]
 	var back_idx = -1
 	#send all elements to be romved to the end, then truncate array to get list of craftables
 	for i in allList.size():
@@ -32,7 +32,7 @@ static func get_valid_mats(shape:StringName,mob:Mob):
 	var mob_mats = []
 	var mat_counts = {}
 	for i in mob.get_access_items():
-		if reqFlag & DEF.mDefs[i.mat][&"flags"] != reqFlag or cantFlag & DEF.mDefs[i.mat][&"flags"] or DEF.getProperty(DEF.sDefs,i.shape,&"m_count") is Array or i.shape==shape:
+		if reqFlag & DEF.mDefs[i.mat][&"flags"] != reqFlag or cantFlag & DEF.mDefs[i.mat][&"flags"] or not DEF.EntryHasFlag(DEF.sDefs, i.shape, &"isRaw"):
 				continue;
 		if not mat_counts.has(i.mat):
 			mat_counts[i.mat] = 0

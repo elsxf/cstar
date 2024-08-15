@@ -9,6 +9,7 @@
 		"toughness":0,
 		"strength":0,
 		"hardness":0,
+		"raw":"Mound",
 		"flags":[],
 	},
 	"Star":{
@@ -25,6 +26,7 @@
 		"toughness":8,
 		"strength":2,
 		"hardness":2,
+		"raw":"Log",
 		"flags":["isShapeable"],
 		},
 	"Stone":{
@@ -49,6 +51,7 @@
 		"toughness":16,
 		"strength":1,
 		"hardness":1,
+		"raw":"Bundle",
 		"flags":["isCloth"],
 	},
 }

@@ -29,6 +29,22 @@ func _init(Into:Item, Reagents:Array, num_of = 1):
 	tu_left = item_mat_difficulty * Into.weight * 50 / 1000
 	tu_total = tu_left
 
+func serialize()->Dictionary:
+	var serialStr = {}
+	serialStr["Recipie"] = [Into_item.serialize(),[]]
+	for i in Ing:
+		serialStr[1].append(i.serialize())
+	return serialStr
+	
+func deSerialize(serialized : Dictionary):
+	Into_item=Item.new("default")
+	Into_item.deSerialize(serialized[0])
+	
+	for i in serialized[1]:
+		var newItem = Item.new("defualt")
+		newItem.deSerialize(i)
+		Ing.append(i)
+
 func work_on(time_u:int):
 	tu_left -= time_u
 	if tu_left<=0:

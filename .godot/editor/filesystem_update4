@@ -14,3 +14,8 @@ res://mob.gd
 res://MenuBack.gd
 res://item.gd
 res://mat_defs.json
+res://crafting.gd
+res://shape_defs.json
+res://terrain.json
+res://rawMats.gd
+res://recipie.gd

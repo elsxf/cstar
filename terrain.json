@@ -71,7 +71,7 @@
 		"m_cost":-1,
 		"v_cost":4,
 		"material":"Wood",
-		"harvest":["Wood Log"],
+		"harvest":{"Wood Raw":3000},
 	},
 	"UpStair":{
 		"source":14,
@@ -79,7 +79,7 @@
 		"m_cost":1,
 		"v_cost":0,
 		"material":"Stone",
-		"harvest":["Stone Block"],
+		"harvest":{"Stone Block":1},
 	},
 	"DownStair":{
 		"source":13,
@@ -87,7 +87,7 @@
 		"m_cost":1,
 		"v_cost":0,
 		"material":"Stone",
-		"harvest":["Stone Block"],
+		"harvest":{"Stone Block":1},
 	},
 	"Rubble":{
 		"source":25,
@@ -95,7 +95,7 @@
 		"m_cost":5,
 		"v_cost":1,
 		"material":"Stone",
-		"harvest":["Stone Mound"],
+		"harvest":{"Stone Raw":1000},
 	},
 	"Constuction":{
 		"source":25,
@@ -110,7 +110,7 @@
 		"m_cost":1,
 		"v_cost":1,
 		"material":"Wood",
-		"harvest":["Wood Log"],
+		"harvest":{"Wood Raw":2500},
 		"flags":["Feature_override"]
 	}
 }

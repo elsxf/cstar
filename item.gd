@@ -110,6 +110,8 @@ func deSerialize(serialized : Dictionary):
 func free_from_container(num_to_free:int = -1):
 	if num_to_free == -1 or num_to_free>=count:
 		self.container_array.erase(self)
+		if self.container is Mob and self.container.wield==self:
+			self.container.wield = null
 		self.container = null
 	else:
 		count -= num_to_free
@@ -145,11 +147,3 @@ func _to_string_verbose():
 		verboseString+=" pierce:"+str(self.pierce)
 	verboseString += "\n[color=DARK_GRAY]A "+self.shape+" made of "+self.mat+ "[/color]"
 	return verboseString
-
-func _ready():
-	pass # Replace with function body.
-
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(_delta):
-	pass
