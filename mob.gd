@@ -9,11 +9,12 @@ class_name Mob
 var list_of_mobs : Array
 var FOV:Array[Vector3i] = []
 @export var sight_range : int
-@export var target_tile : int#index of target tile HACK:fix this shit
+@export var target_tile : int = -1#index of target tile HACK:fix this shit
 
 @export var time_u : int = 0
 @export var speed : int = 100
 @export var attributes:Dictionary = {}
+var effects:Dictionary = {}
 
 @export var items : Array = []
 @export var worn : Array = []
@@ -93,16 +94,24 @@ func deSerialize(serialized:Dictionary):
 	_init(parsed["Mob"][0])
 	dun_c = Vector3i(HEX.strToVec(parsed["Mob"][1]))
 	time_u = int(parsed["Mob"][2])
-	target_tile = int(HEX.strToVec(parsed["Mob"][3]))
+	target_tile = int(parsed["Mob"][3])
 	Hp = int(parsed["Mob"][4])
 	focus = int(parsed["Mob"][5])
 	
+	#clear instanced items
+	for i in items:
+		i.free_from_container()
+	#replace with items from save
 	var itemParsed = parsed["Items"]
 	for i in itemParsed.size():
 		var newItem = Item.new("default")
 		newItem.deSerialize(itemParsed[i])
 		newItem.add_to_container(items,self)
 	
+	#clear from instanced worn
+	for i in worn:
+		i.free_from_container()
+	#replace with clothing from save
 	var wornParsed = parsed["Worn"]
 	for i in wornParsed.size():
 		var newItem = Item.new("default")
@@ -128,6 +137,11 @@ func get_max_melee_range():
 	if self.wield ==null:
 		return 1
 	return DEF.getProperty(DEF.sDefs,self.wield.shape,&"m_range")
+	
+func get_max_ranged_range():
+	if self.wield!=null:
+		return DEF.getProperty(DEF.sDefs,self.wield.shape,&"r_range")
+	return 0
 	
 func set_hp(value:int):
 	self.Hp = min(value,Hp_max)
@@ -262,12 +276,12 @@ func die():
 	free_from_data()
 
 func _to_string():
-	return self.name + " at "+str(curr_c())
-
+	return self.name# + " at "+str(curr_c())
+	
 func _ready():
 	pass # Replace with function body.
 
-func LOS(setFov:bool = true):
+func LOS(setFov:bool = true, rangeOverride:int=0):
 	var canSee:Array[Vector3i] = []
 	if DEF.debug_esp:
 		for i in HEX.inRange(curr_c(),30):
@@ -279,7 +293,8 @@ func LOS(setFov:bool = true):
 	for i in HEX.get_surround(curr_c()):
 		if DEF.isInChunk(i):
 			canSee.append(i)
-	for i in HEX.inRing(curr_c(),sight_range):
+	var using_range = sight_range if rangeOverride==0 else rangeOverride
+	for i in HEX.inRing(curr_c(),using_range):
 		for j in HEX.inLine(curr_c(),i):
 			if not DEF.isInChunk(j):
 				break

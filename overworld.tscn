@@ -59,8 +59,15 @@ texture = ExtResource("4_coqbf")
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_n0hnd"]
 resource_name = "mask"
 texture = ExtResource("5_c5po2")
+0:0/next_alternative_id = 4
 0:0/0 = 0
 0:0/0/modulate = Color(0.0509804, 0.0509804, 0.0509804, 0.807843)
+0:0/1 = 1
+0:0/1/modulate = Color(0, 0, 0, 1)
+0:0/2 = 2
+0:0/2/modulate = Color(0, 0, 0, 0.854902)
+0:0/3 = 3
+0:0/3/modulate = Color(0.219608, 0.0862745, 0, 0)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_fjao3"]
 resource_name = "blank"
@@ -156,7 +163,10 @@ texture = ExtResource("20_4ydn8")
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_kfnb7"]
 texture = ExtResource("21_au5be")
+0:0/next_alternative_id = 2
 0:0/0 = 0
+0:0/1 = 1
+0:0/1/modulate = Color(1, 0.239216, 0.239216, 1)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_74kdd"]
 resource_name = "forest"

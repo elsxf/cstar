@@ -2,12 +2,39 @@ extends Object
 
 class_name ACT
 
-enum Move_Modes{WALK,HOVER,TELEPORT}
+enum Ballistic_Results{MOB,FEATURE,TILE,MISS}
 
-static var next_hit_spark = null
-###############################
-#helper functions, not actions#
-###############################
+enum Move_Modes{WALK,HOVER,TELEPORT}
+#################################
+##helper functions, not actions##
+#################################
+
+##MOA balance
+#0-LOS : laser pointer
+#.1-Very accurate : high power rifle
+#.3-unsteady : bow, smoothbore gun
+#.6-unreasonable : smoothbore cannon 
+static func ballistic(start:Vector3i, target:Vector3i, MOA:float = 0):
+	var dist = HEX.cube_dist(start,target)
+	var offSet = DEF.probRound(MOA * DEF.stdDist() * dist)
+	if offSet>=1:
+		#offset too high, missed target tile
+		target = HEX.get_surround(target).pick_random()
+		
+	#do collision detection
+	var line = HEX.inLine(start,target)
+	for i in range(1,line.size(),1):
+		var tile:Tile = DEF.current_map[HEX.vec3_to_index(line[i])]
+		if tile.get_m_cost()==-1:
+			#hit impassable tile, drop on prev tile
+			return Vector4i(line[i-1].x,line[i-1].y,line[i-1].z,Ballistic_Results.TILE)
+			
+		if tile.m_mob!=null:
+			#hit mob
+			#TODO: chance to dodge, harder if mob is actual target
+			return Vector4i(line[i].x,line[i].y,line[i].z,Ballistic_Results.MOB)
+	return Vector4i(target.x,target.y,target.z,Ballistic_Results.MISS)
+
 static func phys_penetration(target:Mob, blunt:int, cut:int,pierce:int)->Vector4i:
 	var layerTough = 0
 	var layerHard = 0
@@ -46,12 +73,22 @@ static func can_aim_at(mob:Mob, target:Mob):
 		return true
 	return false
 
-static func get_aim_mob_tiles(mob:Mob):
+static func get_aim_mob_tiles(mob:Mob, range:int=0):
 	var result: Array[Tile] = []
-	for i in mob.LOS(false):
+	for i in mob.LOS(false,range):
 		var map_idx = HEX.vec3_to_index(i)
 		if mob.get_map()[map_idx].m_mob!=null and  mob.get_map()[map_idx].m_mob!=mob:
-			result.append(mob.get_map()[map_idx])
+			#add tile, closest at 0 farthest at end
+			var dist = HEX.cube_dist(mob.curr_c(),mob.get_map()[map_idx].m_mob.curr_c())
+			var was_inserted = false
+			for j in result.size():
+				var currDist = HEX.cube_dist(mob.curr_c(),result[j].coord)
+				if dist<currDist:
+					result.insert(j,mob.get_map()[map_idx])
+					was_inserted=true
+					break
+			if not was_inserted:
+				result.append(mob.get_map()[map_idx])
 	return result
 	
 
@@ -153,28 +190,32 @@ static func attack_phys_melee(mob:Mob, target:Mob, calc:bool):
 		else:
 			DEF.textBuffer+="[color=BEIGE]"
 		DEF.textBuffer+=(str(mob)+" dealt "+str(damageNums.y)+"/"+str(damageNums.z)+"/"+str(damageNums.w)+"damage to "+str(target)+"[/color]\n")
-		next_hit_spark = target.curr_c()
+		Signals.HUD_do_hitspark.emit(target.curr_c())
 	return 5
 
-static func attack_phys_ranged(mob:Mob, target:Mob, calc:bool):
-	if not can_aim_at(mob,target):
-		DEF.textBuffer+="[color=brown]you lose track of "+str(target)+"\n[/color]"
-		return 0#no longer a target, refund
+static func attack_phys_ranged(mob:Mob, target:Tile, calc:bool):
+	#if not can_aim_at(mob,target.m_mob):
+		#DEF.textBuffer+="[color=brown]you lose track of "+str(target)+"\n[/color]"
+		#return 0#no longer a target, refund
 	if not calc:
 		#make sure mob shooting still has ranged weapon with enough range
-		if mob.wield==null or DEF.getProperty(DEF.sDefs,mob.wield.shape,"r_range")<HEX.cube_dist(mob.curr_c(),target.curr_c()):
-			DEF.textBuffer+="[color=brown]you too far from "+str(target)+"\n[/color]"
+		if mob.wield==null or DEF.getProperty(DEF.sDefs,mob.wield.shape,"r_range")<HEX.cube_dist(mob.curr_c(),target.coord):
+			DEF.textBuffer+="[color=brown]you're too far from "+str(target)+"\n[/color]"
 			return 0#no longer able to shoot or mob out of range
 		#TODO:calculate attack cost
 		var attack_cost:int = 50
 		
-		var toHit:int = mob.getAttr("ranged") + mob.getAttr("perception") + (0 if mob.wield==null else mob.wield.to_hit)
-		var DV:int = target.getAttr("dodge")+ target.getAttr("agility")
-		DEF.textBuffer+= str(toHit)+" vs "+str(DV)+"\n"
+		var toHit:int = mob.getAttr("ranged") + mob.getAttr("perception") +.1#TODO:accuaracy from shapes
+		var DV:int = 20#target.getAttr("dodge") + target.getAttr("agility") + .1
+		var MOA = float(DV)/toHit
+		DEF.textBuffer+= "MOA:"+str(MOA)+"\n"
 		
 		mob.trainAttr("ranged",DV-toHit)
-		target.trainAttr("dodge",toHit-DV)
-		if DEF.contest(toHit,DV)>0:
+		#target.trainAttr("dodge",toHit-DV)
+		var res = ballistic(mob.curr_c(),target.coord,MOA)
+		var targetVec = Vector3i(res.x,res.y,res.z)
+		Signals.HUD_do_ballistic.emit(mob.curr_c(),targetVec)
+		if res.w!=Ballistic_Results.MOB:
 			#attack missed, do miss handling
 			if(target==DEF.playerM):
 				DEF.textBuffer+="[color=brown]"
@@ -182,35 +223,36 @@ static func attack_phys_ranged(mob:Mob, target:Mob, calc:bool):
 				DEF.textBuffer+="[color=yellow]"
 			else:
 				DEF.textBuffer+="[color=BEIGE]"
-			DEF.textBuffer+=(str(mob)+"'s missile Misses the "+str(target)+"[/color]\n")
-			return attack_cost / 2
-			
-			
-		#damage calculation on hit
-		var blunt:int = 0
-		var cut:int = 0
-		var pierce:int = 0
-		var skill:int = DEF.numToSkill(mob.attributes["ranged"])
-		var attr:int = DEF.numToSkill(mob.attributes["strength"])
-		if(mob.wield==null):
-			blunt = attr * skill
-			pierce = attr * (skill/5)
-			cut = attr * (skill/10)
+			DEF.textBuffer+=(str(mob)+"'s missile Misses![/color]\n") #the "+str(target)+"[/color]\n")
+			return attack_cost
 		else:
-			blunt = mob.wield.blunt + skill/2 + attr
-			cut = mob.wield.cut +skill
-			pierce = mob.wield.pierce + skill + attr
+			var mobHit = DEF.current_map[HEX.vec3_to_index(targetVec)].m_mob
+			#damage calculation on hit
+			var blunt:int = 0
+			var cut:int = 0
+			var pierce:int = 0
+			var skill:int = DEF.numToSkill(mob.attributes["ranged"])
+			var attr:int = DEF.numToSkill(mob.attributes["strength"])
+			if(mob.wield==null):
+				blunt = attr * skill
+				pierce = attr * (skill/5)
+				cut = attr * (skill/10)
+			else:
+				blunt = mob.wield.blunt + skill/2 + attr
+				cut = mob.wield.cut +skill
+				pierce = mob.wield.pierce + skill + attr
+				
+			var damageNums = phys_penetration(mobHit,blunt,cut,pierce)
 			
-		var damageNums = phys_penetration(target,blunt,cut,pierce)
-		
-		if(target==DEF.playerM):
-			DEF.textBuffer+="[color=dark_red]"
-		elif(mob==DEF.playerM):
-			DEF.textBuffer+="[color=Forest_green]"
-		else:
-			DEF.textBuffer+="[color=BEIGE]"
-		DEF.textBuffer+=(str(mob)+"'s missile dealt "+str(damageNums.y)+"/"+str(damageNums.z)+"/"+str(damageNums.w)+"damage to "+str(target)+"[/color]\n")
-		next_hit_spark = target.curr_c()
+			if(target==DEF.playerM):
+				DEF.textBuffer+="[color=dark_red]"
+			elif(mob==DEF.playerM):
+				DEF.textBuffer+="[color=Forest_green]"
+			else:
+				DEF.textBuffer+="[color=BEIGE]"
+			DEF.textBuffer+=(str(mob)+"'s missile dealt "+str(damageNums.y)+"/"+str(damageNums.z)+"/"+str(damageNums.w)+" damage to "+str(mobHit)+"[/color]\n")
+			Signals.HUD_do_hitspark.emit(mobHit.curr_c())
+			return attack_cost
 	return 5
 
 static func cast_spell(mob:Mob, target, spell_name:String, calc:bool):

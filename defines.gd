@@ -4,7 +4,7 @@ class_name DEF
 
 enum {RIGHT,LEFT}
 
-enum Highlight_types{TILE,DOT}
+enum Highlight_types{TILE,DOT,DOT_R}
 
 enum {INT_MAX = 9223372036854775807}
 
@@ -33,9 +33,9 @@ enum vis_tile_names{
 }
 
 static var vis_t_dat = [
-	[10, Vector2(0,0),0],
-	[10, Vector2(0,0),1],
-	[10, Vector2(0,0),2],
+	[11, Vector2(0,0),1],
+	[11, Vector2(0,0),2],
+	[11, Vector2(0,0),3],
 ]
 
 enum Focus{
@@ -146,7 +146,7 @@ static func change_map():
 
 static func create_save_file():
 	#newgame stuff
-	DEF.playerM = Mob.new("Player")
+	DEF.playerM = Mob.new("You")
 	
 	Item.new("Wood","Sword").add_to_container(DEF.playerM.items,DEF.playerM)
 	Item.new("Stone","Sword").add_to_container(DEF.playerM.items,DEF.playerM)
@@ -179,7 +179,7 @@ static func save_to_file():
 
 static func load_from_file():
 	saveState = JSON.parse_string(FileAccess.get_file_as_string("saveGame.sav"))
-	DEF.playerM = Mob.new("Player")
+	DEF.playerM = Mob.new("You")
 	playerM.deSerialize(saveState[PLAYER]["mobSerial"])
 	playerM.attributes = saveState[PLAYER]["attr"]
 	playerM.d_level = saveState[PLAYER]["world"]["curr_level"]
@@ -334,8 +334,15 @@ static func contest(stat1,stat2)->int:
 		result = (stat2roll+stat2)-(stat1roll+stat1)
 	return result
 
-static func stdDist():
+static func stdDist():#from 0.0 to 1.0
 	return (float(rollDice(3,6))-3)/15
+
+static func probRound(toRound:float)->int:
+	#round probablisticly, i.e 7.2 is 7 80% and 8 20%
+	var result:int = floor(toRound)
+	if stdDist()<toRound-result:
+		result+=1
+	return result
 
 static func toBar(part, total, numchars:int = 2, color:bool = true):
 	var percent:float = max(0,float(part)/total)

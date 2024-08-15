@@ -63,6 +63,10 @@ func _init(materialName,shapeName:String="", num_of:int=1):
 		self.density = DEF.getProperty(DEF.mDefs,self.mat,&"density")
 		self.weight = self.density*self.volume
 		
+	dir_stats()
+	
+
+func dir_stats():
 	#tohit calculation
 	self.to_hit = DEF.getProperty(DEF.sDefs,self.shape,&"to_hit")
 	
@@ -101,6 +105,7 @@ func deSerialize(serialized : Dictionary):
 	self.weight = serialized["Item"][3]
 	self.volume = serialized["Item"][4]
 	self.density = serialized["Item"][5]
+	dir_stats()
 
 func free_from_container(num_to_free:int = -1):
 	if num_to_free == -1 or num_to_free>=count:

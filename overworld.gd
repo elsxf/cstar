@@ -1,7 +1,7 @@
 extends Node2D
 
 const hitSparkRes = preload("res://hitSpark.tscn")
-
+const ballisticRes = preload("res://Ballistic.tscn")
 
 var tile_offset = Vector2(-32,-32)#tilesize / 2 * scale
 var zoomScale = .5
@@ -9,12 +9,17 @@ var zoomMin = .25
 var zoomMax = 4
 
 
-func hitSpark(tile:Vector3i):
+func _on_hitSpark(tile:Vector3i):
 	var inst = hitSparkRes.instantiate()
 	inst.position = hex_to_pixel(HEX.axial_to_oddr(tile))
 	inst.emitting = true
 	$HUD.add_child(inst)
-	ACT.next_hit_spark=null
+
+func _on_ballistic(start:Vector3i,end:Vector3i):
+	var inst = ballisticRes.instantiate()
+	inst.start = hex_to_pixel(HEX.axial_to_oddr(start))
+	inst.end =  hex_to_pixel(HEX.axial_to_oddr(end))
+	$HUD.add_child(inst)
 
 func do_LOS():
 	var vis_hex = DEF.vis_t_dat[0][DEF.T_data_cols.Scource]
@@ -42,6 +47,8 @@ func do_LOS():
 		
 
 func offset_map():#centers map on player
+	$Map.scale = DEF.tile_scale*zoomScale
+	
 	var mapOffset = Vector2(-HEX.axial_to_oddr(DEF.playerM.curr_c()))
 	mapOffset.x-=float(absi(mapOffset.y)%2) /2
 	mapOffset*=Vector2($Map.tile_set.tile_size)*$Map.scale
@@ -57,8 +64,30 @@ func pixel_to_hex(point):#get tilemap cell from pixel
 func hex_to_pixel(tile):#gets center pixel of tilemap cell
 	return $Map.to_global($Map.map_to_local(tile))
 
-
-					
+func get_user_aim(range:int,force:bool=false):
+	if range==0:
+		DEF.textBuffer += "[color=BROWN]can't fire current weapon!\n[/color]"
+	else:
+		var choices = ACT.get_aim_mob_tiles(DEF.playerM,range)
+		var chosen:Mob
+		if choices.size()==0:
+			DEF.textBuffer += "[color=BROWN]nothing in range!\n[/color]"
+		elif force:
+			return choices[0].coord
+		else:
+			var primeTarget = choices[0].coord
+			var aimable_tiles = DEF.playerM.LOS(false,range)
+			var targetIdx = aimable_tiles.find(primeTarget)
+			
+			#put closest mob at front of array so it is targeted by default
+			var temp = aimable_tiles[0]
+			aimable_tiles[0] = primeTarget
+			aimable_tiles[targetIdx] = temp
+			
+			Signals.popTile.emit("AIMING",aimable_tiles)
+			var vec = await Signal(Signals,'popValidResponse')
+			return vec
+	return null
 	
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -67,9 +96,13 @@ func _ready():
 	
 	Signals.Player_take_action.connect(_on_player_take_action)
 	Signals.Player_action_taken.connect(_on_Player_action_taken)
+	
 	Signals.HUD_set_map.connect(_on_HUD_set_map)
 	Signals.HUD_highlight_tiles.connect(_on_HUD_highlight_tiles)
 	Signals.HUD_clear_highlight.connect(_on_HUD_clear_highlight)
+	
+	Signals.HUD_do_hitspark.connect(_on_hitSpark)
+	Signals.HUD_do_ballistic.connect(_on_ballistic)
 	
 	$Map.clear()
 	
@@ -161,30 +194,13 @@ func _unhandled_input(event: InputEvent) -> void:
 				next_action = func wait_lambda(_calc):
 					return ACT.wait()
 		"fire","Force_fire":
-			if DEF.getProperty(DEF.sDefs,DEF.playerM.wield.shape,"r_range")==0:
-				DEF.textBuffer += "[color=BROWN]can't fire current weapon!\n[/color]"
-			else:
-				var choices = ACT.get_aim_mob_tiles(DEF.playerM)
-				var chosen:Mob
-				if choices.size()==0:
-					DEF.textBuffer += "[color=BROWN]nothing to fire at!\n[/color]"
-				elif DEF.getEventAction(event)=="Force_fire":
-					chosen = choices[0].m_mob
-					next_action = func fire_lambda(calc):
-						return ACT.attack_phys_ranged(DEF.playerM,chosen,calc)
-				else:
-					var primeTarget = choices[0].coord
-					var targetIdx = DEF.playerM.FOV.find(primeTarget)
-					
-					var temp = DEF.playerM.FOV[0]
-					DEF.playerM.FOV[0] = primeTarget
-					DEF.playerM.FOV[targetIdx] = temp
-					
-					Signals.popTile.emit("AIMING",DEF.playerM.FOV)
-					var vec = await Signal(Signals,'popValidResponse')
-					chosen = DEF.current_map[HEX.vec3_to_index(vec)].m_mob
-					next_action = func fire_lambda(calc):
-						return ACT.attack_phys_ranged(DEF.playerM,chosen,calc)
+			var max_range = DEF.playerM.get_max_ranged_range()
+			var isForced = (DEF.getEventAction(event)=="Force_fire")
+			var vec = await get_user_aim(max_range,isForced)
+			if vec != null:
+				var chosen = DEF.current_map[HEX.vec3_to_index(vec)]
+				next_action = func fire_lambda(calc):
+					return ACT.attack_phys_ranged(DEF.playerM,chosen,calc)
 		"cast":
 			if DEF.playerM.last_spell.is_empty():
 				Signals.enter_menu.emit("Magic")
@@ -275,8 +291,7 @@ func _unhandled_input(event: InputEvent) -> void:
 					next_action= func harvest_lambda(calc):
 						return ACT.harvest(toHarvest, calc)
 				_:
-					for i in validTiles:
-						$Map.set_cell(DEF.Layer_Names.Highlight,HEX.axial_to_oddr(i), 22, Vector2i(0, 0))
+					Signals.HUD_highlight_tiles.emit(validTiles)
 					Signals.popVector.emit("Harvest Where?")
 					var choice = await Signal(Signals,'popValidResponse')
 					if choice!=null:
@@ -348,8 +363,6 @@ func _on_player_take_action(Action_Lambda) -> void:
 			$HUD.last_action_cost=DEF.playerM.get_tu_cost()
 			$HUD.last_action_name=DEF.playerM.get_action_str()
 			DEF.playerM.act()
-			if(ACT.next_hit_spark!=null):
-				hitSpark(ACT.next_hit_spark)
 			break
 		else:
 			DEF.world_time+=1
@@ -360,12 +373,10 @@ func _on_player_take_action(Action_Lambda) -> void:
 						if m.next_action==null:
 							m.get_brain()
 						m.act()
-						if(ACT.next_hit_spark!=null):
-							hitSpark(ACT.next_hit_spark)
 
 
 	if(DEF.playerM.Hp<=0):
-		Signals.popVector.emit("You died!")
+		Signals.popInput.emit("You died!")
 		await Signal(Signals,'popValidResponse')
 		get_tree().root.add_child(preload("res://game_over.tscn").instantiate())
 		queue_free()
@@ -382,7 +393,6 @@ func _on_player_take_action(Action_Lambda) -> void:
 	#set all known to unseen
 
 	#move map
-	$Map.scale = DEF.tile_scale*zoomScale
 	offset_map()
 	do_LOS()
 	Signals.emit_signal("Player_action_taken")
@@ -407,6 +417,8 @@ func _on_HUD_highlight_tiles(vecArray, mode=DEF.Highlight_types.TILE):
 				$Map.set_cell(DEF.Layer_Names.Highlight,HEX.axial_to_oddr(i), 22, Vector2i(0, 0))
 			DEF.Highlight_types.DOT:
 				$Map.set_cell(DEF.Layer_Names.Highlight,HEX.axial_to_oddr(i), 26, Vector2i(0, 0))
+			DEF.Highlight_types.DOT_R:
+				$Map.set_cell(DEF.Layer_Names.Highlight,HEX.axial_to_oddr(i), 26, Vector2i(0, 0),1)
 				
 func _on_HUD_clear_highlight():
 	$Map.clear_layer(DEF.Layer_Names.Highlight)

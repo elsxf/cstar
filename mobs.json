@@ -16,7 +16,7 @@
 		"faction":"Neutral",
 		"hostile_to":[],
 	},
-	"Player":{
+	"You":{
 		"hp":50,
 		"sightRange":15,
 		"wield":"Wood Bow",
@@ -30,7 +30,7 @@
 	},
 	"Guard":{
 		"hp":70,
-		"sightRange":4,
+		"sightRange":5,
 		"wield":"Metal Sword",
 		"wear":["Robe"],
 		"speed":40,

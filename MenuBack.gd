@@ -243,7 +243,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		match $Pages.get_tab_title($Pages.current_tab):
 			"Inventory":
 				if active_panel==LEFT:
-					Signals.popInput.emit(left_array[right_idx]._to_string_verbose())
+					Signals.popInput.emit(left_array[left_idx]._to_string_verbose())
 					await Signal(Signals,'popValidResponse')
 				else:
 					Signals.popInput.emit(right_array[right_idx]._to_string_verbose())

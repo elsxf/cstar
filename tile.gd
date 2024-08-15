@@ -79,11 +79,13 @@ func draw_contents(Map:TileMap, newCoord:Vector3i):
 		m_mob.set_self(Map)
 	
 func get_m_cost():
+	var t_cost = DEF.getProperty(DEF.terrain_dict,t_name,&"m_cost")
 	if not f_name.is_empty():
+		var f_cost = DEF.getProperty(DEF.terrain_dict,f_name,&"m_cost")
 		if DEF.EntryHasFlag(DEF.terrain_dict,f_name,&"Feature_override"):
-			return DEF.getProperty(DEF.terrain_dict,f_name,&"m_cost")
-		return DEF.terrain_dict[t_name][&"m_cost"] + DEF.getProperty(DEF.terrain_dict,f_name,&"m_cost")
-	return DEF.terrain_dict[t_name][&"m_cost"]
+			return f_cost
+		return -1 if (t_cost==-1 or f_cost==-1) else t_cost + f_cost
+	return t_cost
 
 func get_v_cost():
 	return DEF.terrain_dict[t_name][&"v_cost"]
