@@ -258,7 +258,6 @@ func _unhandled_key_input(event: InputEvent) -> void:
 				if right_elements["Needs"].has("Materials"):
 					#if made from raw, get material
 					var chosen_material
-					#TODO:filter out materials of which there arn't enough of
 					var material_choices = right_elements["Needs"]["Materials"]
 					match material_choices.size():
 						0:
@@ -273,22 +272,13 @@ func _unhandled_key_input(event: InputEvent) -> void:
 					if chosen_material == null:
 						return
 					#get all items of given material
-					var valid_items = []
-					for i in DEF.playerM.get_access_items():
-						if i.mat == chosen_material and not (DEF.getProperty(DEF.sDefs,i.shape,&"m_count") is Array):
-							valid_items.append(i)
+					#var valid_items = []
+					#for i in DEF.playerM.get_access_items():
+						#if i.mat == chosen_material and i is RawMat:
+							#valid_items.append(i)
 					var volume_needed = DEF.getProperty(DEF.sDefs,chosen_shape,"m_count")
-					var volume_has = 0
-					var reagent_choices = []
-					while(volume_has<volume_needed):
-						Signals.popChoice.emit("need "+ DEF.dispLiter(volume_needed-volume_has) + " more of", valid_items)
-						var chosen_reagent =  await Signal(Signals,'popValidResponse')
-						if chosen_reagent==null:
-							return
-						volume_has += chosen_reagent.volume
-						reagent_choices.append(chosen_reagent)
-						valid_items.erase(chosen_reagent)
 					var result = Item.new(chosen_material,chosen_shape)
+					#TODO: batch crafting
 					recepie = Recipie.new(result,reagent_choices,volume_has/volume_needed)
 				elif right_elements["Needs"].has("Items"):#subitem craft
 					var reagent_choices = []

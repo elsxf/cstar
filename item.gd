@@ -83,10 +83,18 @@ func dir_stats():
 
 func add_to_container(put_array:Array, container_obj, num_to_add:int = -1):
 	if num_to_add == -1 or num_to_add>=count:
+		for i in put_array:
+			if is_same_item(i):
+				i.count+=count
+				return
 		put_array.append(self)
 		self.container_array = put_array
 		self.container = container_obj
 	else:
+		for i in put_array:
+			if is_same_item(i):
+				i.count+=num_to_add
+				return
 		var to_put = Item.new(self)
 		to_put.count = num_to_add
 		put_array.append(to_put)
@@ -147,3 +155,12 @@ func _to_string_verbose():
 		verboseString+=" pierce:"+str(self.pierce)
 	verboseString += "\n[color=DARK_GRAY]A "+self.shape+" made of "+self.mat+ "[/color]"
 	return verboseString
+
+func is_same_item(item:Item):
+	return (self.name==item.name and self.mat==item.mat and self.shape==item.shape and self.volume==item.volume)
+	
+func get_total_weight():
+	return self.count * self.weight
+
+func get_total_volume():
+	return self.count * self.volume

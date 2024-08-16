@@ -29,10 +29,12 @@ static func get_valid_mats(shape:StringName,mob:Mob):
 	var cantFlag = 0
 	#if shape isn't soft, cant use clothLike
 	cantFlag |=  int(DEF.mDefs[&"Flags"][&"isCloth"]) if not DEF.EntryHasFlag(DEF.sDefs, shape, &"isSoft") else 0
+	
+	
 	var mob_mats = []
 	var mat_counts = {}
 	for i in mob.get_access_items():
-		if reqFlag & DEF.mDefs[i.mat][&"flags"] != reqFlag or cantFlag & DEF.mDefs[i.mat][&"flags"] or not DEF.EntryHasFlag(DEF.sDefs, i.shape, &"isRaw"):
+		if not i is RawMat or reqFlag & DEF.mDefs[i.mat][&"flags"] != reqFlag or cantFlag & DEF.mDefs[i.mat][&"flags"]:
 				continue;
 		if not mat_counts.has(i.mat):
 			mat_counts[i.mat] = 0

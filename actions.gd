@@ -317,7 +317,11 @@ static func harvest(tile:Tile, calc:bool):
 		for entry in harvest_data:
 			#TODO: chance outputs
 			var itemData = entry.split(" ")
-			var i:Item = Item.new(itemData[0],itemData[1])
+			var i
+			if itemData[1]=="Raw":
+				i = RawMat.new(itemData[0],harvest_data[entry])
+			else:
+				i = Item.new(itemData[0],itemData[1],harvest_data[entry])
 			i.add_to_container(tile.i_items,tile)
 		tile.f_name = ""
 	return 600
